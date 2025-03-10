@@ -4,13 +4,24 @@ import { Button } from "@/components/ui/button";
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { useAppDispatch } from "@/redux/hook";
 import { editProfile, verifyEmail } from "@/redux/actions/userActions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import TipTapEditor from "@/components/tiptap-editor";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/redux/store";
+import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu } from "@/redux/actions/footerActions";
+import { clearError, clearSuccess } from "@/redux/reducers/footerReducer";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ProfileFormValues {
   name: string;
@@ -21,12 +32,92 @@ interface ProfileFormValues {
 }
 
 export function ProfileForm() {
-  const { toast } = useToast();
-  const dispatch = useAppDispatch();
   const [currentEmail, setCurrentEmail] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
+  const { footer, error, success } = useSelector(
+    (state: any) => state.footer
+  );
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>, setFieldValue: (field: string, value: any) => void) => {
+  const [kvk, setKvk] = useState("<p></p>");
+  const [socialMenu, setSocialMenu] = useState<any[]>([{ title: "", url: "" }]);
+
+  useEffect(() => {
+    dispatch(getFooterData());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (footer) {
+      if (footer.kvk?.content) {
+        setKvk(footer.kvk.content);
+      }
+      if (footer.socialMenu) {
+        setSocialMenu(footer.socialMenu);
+      }
+    }
+  }, [footer]);
+
+  useEffect(() => {
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error,
+      });
+      dispatch(clearError());
+    }
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Footer updated successfully!",
+      });
+      dispatch(clearSuccess());
+      dispatch(getFooterData());
+    }
+  }, [error, success, dispatch, toast]);
+
+  const handleKvkUpdate = () => {
+    dispatch(
+      updateKvk({
+        title: "KVK Aydınlatma Metni",
+        content: kvk,
+      })
+    );
+  };
+
+  const handleSocialMenuChange = (index: number, field: string, value: string) => {
+    const newSocialMenu = socialMenu.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    );
+    setSocialMenu(newSocialMenu);
+  };
+
+  const handleAddSocialMenu = () => {
+    setSocialMenu([...socialMenu, { title: "", url: "" }]);
+  };
+
+  const handleRemoveSocialMenu = (index: number) => {
+    const itemId = socialMenu[index]._id;
+    dispatch(deleteSocialMenuItem(itemId)).then(() => {
+      const newSocialMenu = socialMenu.filter((_, i) => i !== index);
+      setSocialMenu(newSocialMenu);
+      toast({
+        title: "Success",
+        description: "Sosyal menü öğesi başarıyla silindi!",
+      });
+    });
+  };
+
+  const handleSocialMenuUpdate = () => {
+    dispatch(updateSocialMenu(socialMenu));
+  };
+
+
+  const handleEmailChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFieldValue: (field: string, value: any) => void
+  ) => {
     const value = e.target.value;
     setFieldValue("email", value);
     setCurrentEmail(value);
@@ -42,7 +133,10 @@ export function ProfileForm() {
           passwordConfirm: "",
           verificationCode: "",
         }}
-        onSubmit={async (values: ProfileFormValues, { setSubmitting, setFieldValue }) => {
+        onSubmit={async (
+          values: ProfileFormValues,
+          { setSubmitting, setFieldValue }
+        ) => {
           try {
             const updateData: any = {};
 
@@ -59,13 +153,15 @@ export function ProfileForm() {
                 setDialogOpen(true);
                 toast({
                   title: "Doğrulama Kodu Gönderildi",
-                  description: "Lütfen email adresinize gönderilen doğrulama kodunu giriniz.",
+                  description:
+                    "Lütfen email adresinize gönderilen doğrulama kodunu giriniz.",
                 });
                 return;
               } catch (error: any) {
                 toast({
                   title: "Hata",
-                  description: error.message || "Email güncellenirken bir hata oluştu.",
+                  description:
+                    error.message || "Email güncellenirken bir hata oluştu.",
                   variant: "destructive",
                 });
                 return;
@@ -114,7 +210,7 @@ export function ProfileForm() {
               title: "Başarılı",
               description: "Profil bilgileriniz güncellendi.",
             });
-            
+
             // Reset form after successful update
             setFieldValue("name", "");
             setFieldValue("email", "");
@@ -133,7 +229,7 @@ export function ProfileForm() {
           }
         }}
       >
-        {({ isSubmitting, setFieldValue, values }) => (
+        {({ isSubmitting, setFieldValue }) => (
           <FormikForm className="space-y-8">
             <div className="space-y-2">
               <Label htmlFor="name">İsim</Label>
@@ -159,7 +255,9 @@ export function ProfileForm() {
                 name="email"
                 type="email"
                 placeholder="ornek@email.com"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleEmailChange(e, setFieldValue)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleEmailChange(e, setFieldValue)
+                }
               />
               <p className="text-sm text-muted-foreground">
                 Email adresiniz hesabınızı doğrulamak ve güvenlik bildirimleri
@@ -194,6 +292,72 @@ export function ProfileForm() {
               </div>
             </div>
 
+            <div className="grid gap-8">
+              {/* Policies Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Politikalar</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <>
+                  <Textarea placeholder="Type your message here." />
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={handleKvkUpdate}>
+                        KVK Metnini Güncelle
+                      </Button>
+                    </div>
+                  </>
+                </CardContent>
+              </Card>
+
+              {/* Social Menu Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sosyal Menü</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {socialMenu.map((item, index) => (
+                    <div key={index} className="space-y-2">
+                      <Label htmlFor={`socialMenu-title-${index}`}>
+                        Başlık
+                      </Label>
+                      <Input
+                        id={`socialMenu-title-${index}`}
+                        value={item.title}
+                        onChange={(e) =>
+                          handleSocialMenuChange(index, "title", e.target.value)
+                        }
+                        placeholder="Başlık"
+                      />
+                      <Label htmlFor={`socialMenu-url-${index}`}>URL</Label>
+                      <Input
+                        id={`socialMenu-url-${index}`}
+                        value={item.url}
+                        onChange={(e) =>
+                          handleSocialMenuChange(index, "url", e.target.value)
+                        }
+                        placeholder="URL"
+                      />
+                      <Button
+                        variant="destructive"
+                        onClick={() => handleRemoveSocialMenu(index)}
+                      >
+                        Sil
+                      </Button>
+                    </div>
+                  ))}
+                  <div className="flex justify-between">
+                    <Button variant="secondary" onClick={handleAddSocialMenu}>
+                      Yeni Sosyal Menü Ekle
+                    </Button>
+                    <Button onClick={handleSocialMenuUpdate}>
+                      Sosyal Menüyü Güncelle
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Kaydediliyor..." : "Kaydet"}
             </Button>
@@ -207,21 +371,26 @@ export function ProfileForm() {
             <DialogTitle>Email Doğrulama</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p>Email adresinize doğrulama kodu gönderildi. Lütfen gelen kodu girerek email adresinizi doğrulayın.</p>
+            <p>
+              Email adresinize doğrulama kodu gönderildi. Lütfen gelen kodu
+              girerek email adresinizi doğrulayın.
+            </p>
             <Formik
               initialValues={{ verificationCode: "" }}
               onSubmit={async (values, { setSubmitting }) => {
                 try {
-                  await dispatch(verifyEmail({ 
-                    email: currentEmail,
-                    verificationCode: Number(values.verificationCode)
-                  })).unwrap();
-                  
+                  await dispatch(
+                    verifyEmail({
+                      email: currentEmail,
+                      verificationCode: Number(values.verificationCode),
+                    })
+                  ).unwrap();
+
                   toast({
                     title: "Başarılı",
                     description: "Email adresiniz başarıyla doğrulandı.",
                   });
-                  
+
                   setDialogOpen(false);
                 } catch (error: any) {
                   toast({

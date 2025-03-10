@@ -43,78 +43,6 @@ export const getFooterData = createAsyncThunk(
   }
 );
 
-// Update About Us
-export const updateAboutUs = createAsyncThunk(
-  "footer/updateAboutUs",
-  async (payload: UpdateAboutUsPayload, thunkAPI) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const { data } = await axios.put(
-        `${server}/footer/about-us`,
-        payload,
-        config
-      );
-      return data;
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
-
-// Update Copyright
-export const updateCopyright = createAsyncThunk(
-  "footer/updateCopyright",
-  async (payload: UpdateCopyrightPayload, thunkAPI) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const { data } = await axios.put(
-        `${server}/footer/copyright`,
-        payload,
-        config
-      );
-      return data;
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
-
-// Update Cookie Policy
-export const updateCookiePolicy = createAsyncThunk(
-  "footer/updateCookiePolicy",
-  async (payload: UpdateCookiePolicyPayload, thunkAPI) => {
-    try {
-      const token = localStorage.getItem("accessToken");
-      const config = {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      };
-      const { data } = await axios.put(
-        `${server}/footer/cookie-policy`,
-        payload,
-        config
-      );
-      return data;
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
-
 // Update KVK
 export const updateKvk = createAsyncThunk(
   "footer/updateKvk",
@@ -135,37 +63,6 @@ export const updateKvk = createAsyncThunk(
       return data;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
-
-// Submit Form
-export const submitForm = createAsyncThunk(
-  "footer/submitForm",
-  async (payload: FormSubmissionPayload, thunkAPI) => {
-    try {
-      const { data } = await axios.post(
-        `${server}/footer/forms`,
-        payload
-      );
-      return data;
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
-    }
-  }
-);
-
-// Delete form submission
-export const deleteFormSubmission = createAsyncThunk(
-  "footer/deleteFormSubmission",
-  async (formId: string, thunkAPI) => {
-    try {
-      const { data } = await axios.delete(`${server}/footer/forms/${formId}`);
-      return { formId, data };
-    } catch (error: any) {
-      return thunkAPI.rejectWithValue(
-        error.response?.data?.message || "Form başvurusu silinemedi"
-      );
     }
   }
 );
