@@ -55,6 +55,7 @@ export default function CryptoTable() {
         );
 
         const responses = await Promise.all(promises);
+        console.log(responses);
         const allData = responses.flatMap((response, pageIndex) =>
           response.data.map((coin: any, index: number) => ({
             id: pageIndex * 100 + index + 1,
