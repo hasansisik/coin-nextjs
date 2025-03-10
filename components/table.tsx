@@ -4,7 +4,6 @@ import axios from 'axios';
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
@@ -29,7 +28,7 @@ export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100;
+  const itemsPerPage = 100; // 100'den 500'e değiştirildi
 
   const currentTableData = cryptoData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -41,35 +40,38 @@ export default function CryptoTable() {
   useEffect(() => {
     const fetchCryptoData = async () => {
       try {
-        const response = await axios.get(
-          'https://api.coingecko.com/api/v3/coins/markets',
-          {
+        const pages = [1, 2, 3, 4, 5]; // 5 sayfa çekeceğiz
+        const promises = pages.map(page =>
+          axios.get('https://api.coingecko.com/api/v3/coins/markets', {
             params: {
               vs_currency: 'usd',
               order: 'market_cap_desc',
-              per_page: 500,
-              page: 1,
+              per_page: 100,
+              page: page,
               sparkline: false,
               price_change_percentage: '1h,24h,7d'
             }
-          }
+          })
         );
 
-        const formattedData: CryptoData[] = response.data.map((coin: any, index: number) => ({
-          id: index + 1,
-          name: coin.name,
-          symbol: coin.symbol.toUpperCase(),
-          icon: coin.image,
-          price: coin.current_price,
-          priceChange1h: coin.price_change_percentage_1h_in_currency || 0,
-          priceChange24h: coin.price_change_percentage_24h || 0,
-          priceChange7d: coin.price_change_percentage_7d_in_currency || 0, // Burayı değiştirdik
-          volume24h: coin.total_volume,
-          marketCap: coin.market_cap,
-          totalSupply: coin.total_supply || 0,
-        }));
+        const responses = await Promise.all(promises);
+        const allData = responses.flatMap((response, pageIndex) =>
+          response.data.map((coin: any, index: number) => ({
+            id: pageIndex * 100 + index + 1,
+            name: coin.name,
+            symbol: coin.symbol.toUpperCase(),
+            icon: coin.image,
+            price: coin.current_price,
+            priceChange1h: coin.price_change_percentage_1h_in_currency || 0,
+            priceChange24h: coin.price_change_percentage_24h || 0,
+            priceChange7d: coin.price_change_percentage_7d_in_currency || 0,
+            volume24h: coin.total_volume,
+            marketCap: coin.market_cap,
+            totalSupply: coin.total_supply || 0,
+          }))
+        );
 
-        setCryptoData(formattedData);
+        setCryptoData(allData);
       } catch (error) {
         console.error('Error fetching crypto data:', error);
       } finally {
