@@ -40,6 +40,12 @@ export default function CryptoTable() {
   useEffect(() => {
     const fetchCryptoData = async () => {
       try {
+        // Önce localStorage'dan veriyi al ve state'e set et
+        const cachedData = localStorage.getItem('cryptoData');
+        if (cachedData) {
+          setCryptoData(JSON.parse(cachedData));
+        }
+
         const pages = [1, 2, 3, 4, 5]; // 5 sayfa çekeceğiz
         const promises = pages.map(page =>
           axios.get('https://api.coingecko.com/api/v3/coins/markets', {
@@ -55,7 +61,7 @@ export default function CryptoTable() {
         );
 
         const responses = await Promise.all(promises);
-        console.log(responses);
+        console.log("responses",responses);
         const allData = responses.flatMap((response, pageIndex) =>
           response.data.map((coin: any, index: number) => ({
             id: pageIndex * 100 + index + 1,
@@ -72,9 +78,17 @@ export default function CryptoTable() {
           }))
         );
 
+        // API çağrısı başarılı olursa yeni veriyi kaydet
         setCryptoData(allData);
+        localStorage.setItem('cryptoData', JSON.stringify(allData));
+
       } catch (error) {
         console.error('Error fetching crypto data:', error);
+        // Hata durumunda localStorage'dan veri al
+        const cachedData = localStorage.getItem('cryptoData');
+        if (cachedData && !cryptoData.length) {
+          setCryptoData(JSON.parse(cachedData));
+        }
       } finally {
         setIsLoading(false);
       }
@@ -116,7 +130,7 @@ export default function CryptoTable() {
       <div className="w-full overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <p>Loading...</p>
+            <p>Yükleniyor...</p>
           </div>
         ) : (
           <table className="w-full border-collapse">

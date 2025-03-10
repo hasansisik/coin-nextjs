@@ -118,14 +118,14 @@ export default function Header() {
           size="icon"
           onClick={() => router.push('/dashboard/user')}
         >
-          <Settings className="h-5 w-5 text-black group-hover:text-white" />
+          <Settings className="h-6 w-6 text-black group-hover:text-white" />
         </Button>
         <Button 
           className="rounded-full bg-neutral-100 group" 
           size="icon"
           onClick={() => router.push('/dashboard/profile')}
         >
-          <User className="h-5 w-5 text-black group-hover:text-white"  />
+          <User className="h-6 w-6 text-black group-hover:text-white"  />
         </Button>
       </div>
     </header>

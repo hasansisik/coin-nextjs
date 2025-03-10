@@ -117,13 +117,13 @@ export default function UserPage() {
             onClick={isEdit ? handleEditClose : handleCreateClose}
             className="flex-1"
           >
-            Cancel
+            Vazgeç
           </Button>
           <Button 
             onClick={isEdit ? handleEditClose : handleCreateClose}
             className="flex-1"
           >
-            {isEdit ? "Save Changes" : "Create User"}
+            {isEdit ? "Kaydet" : "Kullanıcı Oluştur"}
           </Button>
         </div>
       </div>
@@ -133,20 +133,20 @@ export default function UserPage() {
   return (
     <div className="">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Users</h1>
+        <h1 className="text-2xl font-bold">Kullanıcılar</h1>
         
         {/* Create User Drawer */}
         <Drawer open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DrawerTrigger asChild>
             <Button className="flex items-center gap-2" onClick={() => setIsCreateOpen(true)}>
               <Plus size={16} />
-              Create User
+              Kullanıcı Oluştur
             </Button>
           </DrawerTrigger>
           <DrawerContent className="pb-4">
             <DrawerHeader className="border-b pb-4">
               <DrawerTitle className="text-xl font-semibold">
-                Create New User
+                Kullanıcı Oluştur
               </DrawerTitle>
             </DrawerHeader>
             <UserForm isEdit={false} />
@@ -167,11 +167,11 @@ export default function UserPage() {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>User</TableHead>
+            <TableHead>Kullanıcı</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created At</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Rol</TableHead>
+            <TableHead>Oluşturulma Tarihi</TableHead>
+            <TableHead className="text-right">Aksiyonlar</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -196,10 +196,10 @@ export default function UserPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleEdit(user)}>
-                      Edit
+                      Düzenle
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-red-600">
-                      Delete
+                      Sil
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
