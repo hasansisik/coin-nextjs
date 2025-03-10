@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { 
 
@@ -10,10 +11,9 @@ import {
 } from 'lucide-react';
 
 const menuItems = [
-  { name: 'Anasayfa', href: '/' },
-  { name: 'Kullanıcılar', href: '/users' },
-  { name: 'Ayarlar', href: '/settings' },
-
+  { name: 'Anasayfa', href: '/dashboard' },
+  { name: 'Kullanıcılar', href: '/dashboard/user' },
+  { name: 'Ayarlar', href: '/dashboard/profile' },
 ];
 
 interface CryptoDataType {
@@ -28,6 +28,7 @@ interface CryptoDataType {
 }
 
 export default function Header() {
+  const router = useRouter();
   const [cryptoData, setCryptoData] = useState<CryptoDataType>({
     btc: { price: 0, image: '' },
     eth: { price: 0, image: '' }
@@ -68,7 +69,7 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between px-20 py-3 border-b">
       <div className="flex items-center space-x-5">
-        <Link href="/" className="flex items-center space-x-2  bg-neutral-100 px-10 py-2 rounded-full">
+        <Link href="/dashboard" className="flex items-center space-x-2 bg-neutral-100 px-10 py-2 rounded-full">
           <Bitcoin className="h-7 w-7 text-primary" />
           <span className="text-md font-bold">Coin Market</span>
         </Link>
@@ -93,7 +94,7 @@ export default function Header() {
           ) : (
             <Bitcoin className="h-5 w-5 text-orange-500" />
           )}
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm font-bold ">
             {isLoading ? "..." : `$${cryptoData.btc.price.toLocaleString()}`}
           </div>
         </div>
@@ -105,17 +106,25 @@ export default function Header() {
               <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z"/>
             </svg>
           )}
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm font-bold">
             {isLoading ? "..." : `$${cryptoData.eth.price.toLocaleString()}`}
           </div>
         </div>
       </div>
       
       <div className="flex items-center space-x-3">
-        <Button className="rounded-full bg-neutral-100 group" size="icon">
+        <Button 
+          className="rounded-full bg-neutral-100 group" 
+          size="icon"
+          onClick={() => router.push('/dashboard/user')}
+        >
           <Settings className="h-5 w-5 text-black group-hover:text-white" />
         </Button>
-        <Button className="rounded-full bg-neutral-100 group" size="icon">
+        <Button 
+          className="rounded-full bg-neutral-100 group" 
+          size="icon"
+          onClick={() => router.push('/dashboard/profile')}
+        >
           <User className="h-5 w-5 text-black group-hover:text-white"  />
         </Button>
       </div>
