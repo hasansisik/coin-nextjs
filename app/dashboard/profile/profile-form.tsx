@@ -1,17 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Formik, Form as FormikForm, Field } from "formik";
+import { Formik, Form as FormikForm } from "formik";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { editProfile, verifyEmail } from "@/redux/actions/userActions";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { editProfile } from "@/redux/actions/userActions";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

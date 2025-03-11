@@ -47,7 +47,8 @@ export default function UserPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useSelector((state: RootState) => state.user);
   const { toast } = useToast()
-  console.log("users",users)
+  const  {user}  = useSelector((state: RootState) => state.user);
+  console.log("user",user)
 
   useEffect(() => {
     dispatch(getAllUsers());

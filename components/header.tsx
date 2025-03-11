@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { 
   Bitcoin, 
-  Settings, 
+  LogOut, 
   User,
 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/redux/store';
 import { getFooterData } from '@/redux/actions/footerActions';
+import { logout } from '@/redux/actions/userActions';
+import { useToast } from "@/components/ui/use-toast";
 
 const menuItems = [
   { name: 'Anasayfa', href: '/dashboard' },
@@ -38,6 +40,7 @@ const formatUrl = (url: string) => {
 
 export default function Header() {
   const router = useRouter();
+  const { toast } = useToast();
   const [cryptoData, setCryptoData] = useState<CryptoDataType>({
     btc: { price: 0, image: '' },
     eth: { price: 0, image: '' }
@@ -45,7 +48,6 @@ export default function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const dispatch = useDispatch<AppDispatch>()
   const { footer } = useSelector((state: any) => state.footer)
-  console.log(footer)
 
   useEffect(() => {
     dispatch(getFooterData())
@@ -85,6 +87,24 @@ export default function Header() {
   const handleSocialClick = (url: string) => {
     const formattedUrl = formatUrl(url);
     window.open(formattedUrl, '_blank');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await dispatch(logout());
+      toast({
+        title: "Başarılı",
+        description: "Başarıyla çıkış yapıldı!",
+      });
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({
+        variant: "destructive",
+        title: "Hata",
+        description: "Çıkış yapılırken bir hata oluştu.",
+      });
+    }
   };
 
   return (
@@ -171,9 +191,9 @@ export default function Header() {
         <Button 
           className="rounded-full bg-neutral-100 group h-12 w-12" 
           size="icon"
-          onClick={() => router.push('/dashboard/user')}
+          onClick={handleLogout}
         >
-          <Settings className="h-7 w-7 text-black group-hover:text-white" />
+          <LogOut className="h-7 w-7 text-black group-hover:text-white" />
         </Button>
         <Button 
           className="rounded-full bg-neutral-100 group h-12 w-12" 
