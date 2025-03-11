@@ -30,7 +30,7 @@ interface CryptoData {
 
 interface SupplyData {
   timestamp: string;
-  totalSupply: number;
+  circulatingSupply: number;
 }
 
 interface SupplyHistory {
@@ -109,7 +109,7 @@ export default function CryptoTable() {
 
         return coins.map((coin) => {
           const history = supplyDataMap[coin.symbol.toUpperCase()];
-          const currentSupply = coin.totalSupply;
+          const currentSupply = coin.circulatingSupply;
 
           if (
             !history ||
@@ -174,16 +174,16 @@ export default function CryptoTable() {
           return {
             ...coin,
             supplyChange1d: daySupply
-              ? calculateChange(daySupply.totalSupply)
+              ? calculateChange(daySupply.circulatingSupply)
               : { change: null, supply: null },
             supplyChange1w: weekSupply
-              ? calculateChange(weekSupply.totalSupply)
+              ? calculateChange(weekSupply.circulatingSupply)
               : { change: null, supply: null },
             supplyChange1m: monthSupply
-              ? calculateChange(monthSupply.totalSupply)
+              ? calculateChange(monthSupply.circulatingSupply)
               : { change: null, supply: null },
             supplyChange1y: yearSupply
-              ? calculateChange(yearSupply.totalSupply)
+              ? calculateChange(yearSupply.circulatingSupply)
               : { change: null, supply: null },
           };
         });
@@ -307,16 +307,15 @@ export default function CryptoTable() {
               <tr className="text-left text-base font-medium text-gray-800">
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Coin</th>
-                <th className="px-4 py-3">Price</th>
-                <th className="px-4 py-3">Supply (1d)</th>
-                <th className="px-4 py-3">Supply (1w)</th>
-                <th className="px-4 py-3">Supply (1m)</th>
-                <th className="px-4 py-3">Supply (1y)</th>
-                <th className="px-4 py-3">24h Volume</th>
-                <th className="px-4 py-3">Market Cap</th>
-                <th className="px-4 py-3">Circulating Supply</th>
-                <th className="px-4 py-3">Total Supply</th>
-                <th className="px-4 py-3">Max Supply</th>
+                <th className="px-4 py-3">Fiyat</th>
+                <th className="px-4 py-3">Dolaşımdaki arz (1g)</th>
+                <th className="px-4 py-3">Dolaşımdaki arz (1h)</th>
+                <th className="px-4 py-3">Dolaşımdaki arz (1a)</th>
+                <th className="px-4 py-3">24s Hacim</th>
+                <th className="px-4 py-3">Market Değeri</th>
+                <th className="px-4 py-3">Dolaşımdaki arz</th>
+                <th className="px-4 py-3">Toplam arz</th>
+                <th className="px-4 py-3">Maksimum Arz</th>
               </tr>
             </thead>
             <tbody>
@@ -351,9 +350,7 @@ export default function CryptoTable() {
                   <td className="px-4 py-4">
                     {formatPercentage(crypto.supplyChange1m)}
                   </td>
-                  <td className="px-4 py-4">
-                    {formatPercentage(crypto.supplyChange1y)}
-                  </td>
+
                   <td className="px-4 py-4">
                     {formatCurrency(crypto.volume24h)}
                   </td>
