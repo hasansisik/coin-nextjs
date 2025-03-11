@@ -17,14 +17,26 @@ interface CryptoData {
   symbol: string;
   icon: string;
   price: number;
-
   volume24h: number;
   marketCap: number;
   totalSupply: number;
-  supplyChange1d: number;
-  supplyChange1w: number;
-  supplyChange1m: number;
-  supplyChange1y: number;
+  supplyChange1d: { change: number | null, supply: number | null };
+  supplyChange1w: { change: number | null, supply: number | null };
+  supplyChange1m: { change: number | null, supply: number | null };
+  supplyChange1y: { change: number | null, supply: number | null };
+}
+
+interface SupplyData {
+  timestamp: string;
+  totalSupply: number;
+}
+
+interface SupplyHistory {
+  dailySupplies: SupplyData[];
+}
+
+interface SupplyDataMap {
+  [key: string]: SupplyHistory;
 }
 
 export default function CryptoTable() {
@@ -67,10 +79,10 @@ export default function CryptoTable() {
             volume24h: coin.total_volume,
             marketCap: coin.market_cap,
             totalSupply: coin.total_supply || 0,
-            supplyChange1d: 0,
-            supplyChange1w: 0,
-            supplyChange1m: 0,
-            supplyChange1y: 0,
+            supplyChange1d: { change: 0, supply: 0 },
+            supplyChange1w: { change: 0, supply: 0 },
+            supplyChange1m: { change: 0, supply: 0 },
+            supplyChange1y: { change: 0, supply: 0 },
           }))
         );
       } catch (error) {
@@ -80,75 +92,69 @@ export default function CryptoTable() {
     };
 
     const fetchSupplyHistory = async (coins: CryptoData[]) => {
-      console.log("111111111111111111");
       try {
-        const enhancedData = await Promise.all(
-          coins.map(async (coin) => {
-            try {
-              const supplyResponse = await axios.get(
-                `${server}/supply-history/latest`,
-                {
-                  params: { symbol: coin.symbol.toLowerCase() },
-                }
-              );
+        const symbols = coins.map(coin => coin.symbol.toLowerCase());
+        const supplyResponse = await axios.get(`${server}/supply-history/bulk`, {
+          params: { symbols: symbols.join(',') }
+        });
 
-              const history = supplyResponse.data.data;
-              const currentSupply = coin.totalSupply;
+        const supplyDataMap: SupplyDataMap = supplyResponse.data.data;
 
-              if (
-                !history ||
-                !history.dailySupplies ||
-                history.dailySupplies.length === 0
-              ) {
-                return coin;
-              }
+        return coins.map(coin => {
+          const history = supplyDataMap[coin.symbol.toUpperCase()];
+          const currentSupply = coin.totalSupply;
 
-              const calculateChange = (daysAgo: number) => {
-                const now = new Date();
-                const targetDate = new Date(
-                  now.getTime() - daysAgo * 24 * 60 * 60 * 1000
-                );
+          if (!history || !history.dailySupplies || history.dailySupplies.length === 0) {
+            return {
+              ...coin,
+              supplyChange1d: { change: null, supply: null },
+              supplyChange1w: { change: null, supply: null },
+              supplyChange1m: { change: null, supply: null },
+              supplyChange1y: { change: null, supply: null }
+            };
+          }
 
-                const closestSupply = history.dailySupplies.reduce(
-                  (prev: any, curr: any) => {
-                    const prevDate = new Date(prev.timestamp);
-                    const currDate = new Date(curr.timestamp);
-                    const prevDiff = Math.abs(
-                      prevDate.getTime() - targetDate.getTime()
-                    );
-                    const currDiff = Math.abs(
-                      currDate.getTime() - targetDate.getTime()
-                    );
-                    return prevDiff < currDiff ? prev : curr;
-                  }
-                );
+          const now = new Date();
+          const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
 
-                if (!closestSupply.totalSupply || !currentSupply) return 0;
-                return (
-                  ((currentSupply - closestSupply.totalSupply) /
-                    closestSupply.totalSupply) *
-                  100
-                );
-              };
+          const findClosestSupply = (targetDate: Date) => {
+            const supplies = history.dailySupplies.filter((supply: SupplyData) => 
+              Math.abs(new Date(supply.timestamp).getTime() - targetDate.getTime()) <= 24 * 60 * 60 * 1000
+            );
 
-              return {
-                ...coin,
-                supplyChange1d: calculateChange(1),
-                supplyChange1w: calculateChange(7),
-                supplyChange1m: calculateChange(30),
-                supplyChange1y: calculateChange(365),
-              };
-            } catch (error) {
-              console.error(
-                `Error fetching supply history for ${coin.symbol}:`,
-                error
-              );
-              return coin;
-            }
-          })
-        );
+            if (supplies.length === 0) return null;
 
-        return enhancedData;
+            return supplies.reduce((prev, curr) => {
+              const prevDiff = Math.abs(new Date(prev.timestamp).getTime() - targetDate.getTime());
+              const currDiff = Math.abs(new Date(curr.timestamp).getTime() - targetDate.getTime());
+              return prevDiff < currDiff ? prev : curr;
+            });
+          };
+
+          const calculateChange = (oldSupply: number | null) => {
+            if (!oldSupply || !currentSupply) return { change: null, supply: null };
+            return {
+              change: ((currentSupply - oldSupply) / oldSupply) * 100,
+              supply: oldSupply
+            };
+          };
+
+          const daySupply = findClosestSupply(oneDayAgo);
+          const weekSupply = findClosestSupply(oneWeekAgo);
+          const monthSupply = findClosestSupply(oneMonthAgo);
+          const yearSupply = findClosestSupply(oneYearAgo);
+
+          return {
+            ...coin,
+            supplyChange1d: daySupply ? calculateChange(daySupply.totalSupply) : { change: null, supply: null },
+            supplyChange1w: weekSupply ? calculateChange(weekSupply.totalSupply) : { change: null, supply: null },
+            supplyChange1m: monthSupply ? calculateChange(monthSupply.totalSupply) : { change: null, supply: null },
+            supplyChange1y: yearSupply ? calculateChange(yearSupply.totalSupply) : { change: null, supply: null }
+          };
+        });
       } catch (error) {
         console.error("Error fetching supply history:", error);
         return coins;
@@ -217,25 +223,27 @@ export default function CryptoTable() {
     return `$${num.toLocaleString("en-US")}`;
   };
 
-  const formatPercentage = (value: number): React.ReactElement => {
-    if (value === null || isNaN(value)) {
+  const formatPercentage = (value: { change: number | null, supply: number | null }): React.ReactElement => {
+    if (value.change === null || isNaN(value.change)) {
       return <span className="text-gray-500">-</span>;
     }
 
-    const color =
-      value === 0
-        ? "text-green-500"
-        : value < 0
-        ? "text-red-500"
-        : "text-green-500";
-    const prefix = value === 0 ? "" : value < 0 ? "▼ " : "▲ ";
-    const absValue = Math.abs(value);
+    const color = value.change === 0 ? "text-gray-500" : 
+                  value.change < 0 ? "text-red-500" : 
+                  "text-green-500";
+    const prefix = value.change === 0 ? "" : 
+                  value.change < 0 ? "▼ " : 
+                  "▲ ";
+                  
+    const formattedPercent = Math.abs(value.change) > 1000 ? 
+      `${Math.round(value.change)}` : 
+      value.change.toFixed(1);
 
     return (
-      <span className={color}>
-        {prefix}
-        {absValue.toFixed(1)}%
-      </span>
+      <div className={`${color} flex flex-col`}>
+        <span>{prefix}{formattedPercent}%</span>
+        <span className="text-sm opacity-75">{value.supply?.toLocaleString() ?? '-'}</span>
+      </div>
     );
   };
 
