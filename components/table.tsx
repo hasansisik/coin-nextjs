@@ -302,68 +302,68 @@ export default function CryptoTable() {
             <p>Yükleniyor...</p>
           </div>
         ) : (
-          <table className="w-full border-collapse">
+          <table className="w-full border-collapse text-sm whitespace-nowrap">
             <thead>
-              <tr className="text-left text-base font-medium text-gray-800">
-                <th className="px-4 py-3">#</th>
-                <th className="px-4 py-3">Coin</th>
-                <th className="px-4 py-3">Fiyat</th>
-                <th className="px-4 py-3">Dolaşımdaki arz (1g)</th>
-                <th className="px-4 py-3">Dolaşımdaki arz (1h)</th>
-                <th className="px-4 py-3">Dolaşımdaki arz (1a)</th>
-                <th className="px-4 py-3">24s Hacim</th>
-                <th className="px-4 py-3">Market Değeri</th>
-                <th className="px-4 py-3">Dolaşımdaki arz</th>
-                <th className="px-4 py-3">Toplam arz</th>
-                <th className="px-4 py-3">Maksimum Arz</th>
+              <tr className="text-left font-medium text-gray-800">
+                <th className="px-2 py-2">#</th>
+                <th className="px-2 py-2">Coin</th>
+                <th className="px-2 py-2">Fiyat</th>
+                <th className="px-2 py-2">Dolaşımdaki Arz (1g)</th>
+                <th className="px-2 py-2">Dolaşımdaki Arz (1h)</th>
+                <th className="px-2 py-2">Dolaşımdaki Arz (1a)</th>
+                <th className="px-2 py-2">24s Hacim</th>
+                <th className="px-2 py-2">Market Değeri</th>
+                <th className="px-2 py-2">Dolaşım Arzı</th>
+                <th className="px-2 py-2">Toplam Arz</th>
+                <th className="px-2 py-2">Max Arz</th>
               </tr>
             </thead>
             <tbody>
               {currentTableData.map((crypto) => (
                 <tr
                   key={crypto.id}
-                  className="border-t border-gray-200 text-base hover:bg-gray-50"
+                  className="border-t border-gray-200 hover:bg-gray-50"
                 >
-                  <td className="px-4 py-4 font-bold">{crypto.id}</td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-3 font-bold">{crypto.id}</td>
+                  <td className="px-2 py-3 max-w-[250px]">
                     <div className="flex items-center gap-2">
                       <img
                         src={crypto.icon}
                         alt={crypto.name}
-                        className="h-10 w-10 rounded-full"
+                        className="h-8 w-8 rounded-full flex-shrink-0"
                       />
-                      <div className="flex items-center gap-1">
-                        <span className="font-medium">{crypto.name}</span>
-                        <span className="text-gray-500">{crypto.symbol}</span>
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className="font-medium truncate">{crypto.name}</span>
+                        <span className="text-gray-500 text-xs flex-shrink-0">{crypto.symbol}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-4 font-medium">
+                  <td className="px-2 py-4 font-medium">
                     ${formatNumber(crypto.price)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1d)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1w)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1m)}
                   </td>
 
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatCurrency(crypto.volume24h)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatCurrency(crypto.marketCap)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatCurrency(crypto.circulatingSupply)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {formatCurrency(crypto.totalSupply)}
                   </td>
-                  <td className="px-4 py-4">
+                  <td className="px-2 py-4">
                     {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
                   </td>
                 </tr>
