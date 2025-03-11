@@ -34,9 +34,10 @@ export interface EditProfilePayload {
 }
 
 export interface EditUserPayload {
-  userId: string;
-  role?: string;
-  status?: string;
+  id: string;  // userId yerine id kullanacağız
+  name: string;
+  email: string;
+  role: string;
 }
 
 export interface AgainEmailPayload {
@@ -67,8 +68,10 @@ export const login = createAsyncThunk(
       document.cookie = `token=${token}; path=/`;
       return data.user;
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Giriş yapılamadı';
-      return thunkAPI.rejectWithValue(message);
+      // API'den gelen hata mesajını yakala
+      const errorMessage = error.response?.data?.message || 
+                         'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
+      return thunkAPI.rejectWithValue(errorMessage);
     }
   }
 );
@@ -215,9 +218,9 @@ export const editUsers = createAsyncThunk(
   async (payload: EditUserPayload, thunkAPI) => {
     try {
       const token = localStorage.getItem("accessToken");
-      const { userId, ...updateData } = payload;
+      const { id, ...updateData } = payload;  // id'yi ayırıp geri kalanını updateData'ya koy
       const { data } = await axios.put(
-        `${server}/auth/users/${userId}`,
+        `${server}/auth/users/${id}`,  // userId yerine id kullanıyoruz
         updateData,
         {
           headers: {

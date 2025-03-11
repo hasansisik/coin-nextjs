@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button";
 import { Formik, Form as FormikForm, Field } from "formik";
 import { Input } from "@/components/ui/input";
-import { PasswordInput } from "@/components/ui/password-input";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { editProfile, verifyEmail } from "@/redux/actions/userActions";
@@ -16,7 +15,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import TipTapEditor from "@/components/tiptap-editor";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu } from "@/redux/actions/footerActions";
@@ -30,6 +28,10 @@ interface ProfileFormValues {
   passwordConfirm: string;
   verificationCode: string;
 }
+
+const stripHtmlTags = (html: string) => {
+  return html.replace(/<[^>]*>/g, '');
+};
 
 export function ProfileForm() {
   const [currentEmail, setCurrentEmail] = useState("");
@@ -50,7 +52,7 @@ export function ProfileForm() {
   useEffect(() => {
     if (footer) {
       if (footer.kvk?.content) {
-        setKvk(footer.kvk.content);
+        setKvk(stripHtmlTags(footer.kvk.content));
       }
       if (footer.socialMenu) {
         setSocialMenu(footer.socialMenu);
@@ -81,7 +83,7 @@ export function ProfileForm() {
     dispatch(
       updateKvk({
         title: "KVK Aydınlatma Metni",
-        content: kvk,
+        content: `<p>${kvk}</p>`,
       })
     );
   };
@@ -111,16 +113,6 @@ export function ProfileForm() {
 
   const handleSocialMenuUpdate = () => {
     dispatch(updateSocialMenu(socialMenu));
-  };
-
-
-  const handleEmailChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    setFieldValue: (field: string, value: any) => void
-  ) => {
-    const value = e.target.value;
-    setFieldValue("email", value);
-    setCurrentEmail(value);
   };
 
   return (
@@ -231,67 +223,6 @@ export function ProfileForm() {
       >
         {({ isSubmitting, setFieldValue }) => (
           <FormikForm className="space-y-8">
-            <div className="space-y-2">
-              <Label htmlFor="name">İsim</Label>
-              <Field
-                as={Input}
-                id="name"
-                name="name"
-                placeholder="İsminizi girin"
-              />
-              <p className="text-sm text-muted-foreground">
-                Bu sizin herkese açık görünen adınızdır. Gerçek adınız veya
-                takma adınız olabilir.
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Field
-                as={Input}
-                id="email"
-                name="email"
-                type="email"
-                placeholder="ornek@email.com"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  handleEmailChange(e, setFieldValue)
-                }
-              />
-              <p className="text-sm text-muted-foreground">
-                Email adresiniz hesabınızı doğrulamak ve güvenlik bildirimleri
-                için kullanılacaktır.
-              </p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="password">Yeni Şifre</Label>
-                <Field
-                  as={PasswordInput}
-                  id="password"
-                  name="password"
-                  placeholder="********"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Şifrenizi değiştirmek istemiyorsanız boş bırakın.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="passwordConfirm">Şifreyi Tekrar Girin</Label>
-                <Field
-                  as={PasswordInput}
-                  id="passwordConfirm"
-                  name="passwordConfirm"
-                  placeholder="********"
-                />
-              </div>
-            </div>
-
             <div className="grid gap-8">
               {/* Policies Section */}
               <Card>
@@ -300,7 +231,12 @@ export function ProfileForm() {
                 </CardHeader>
                 <CardContent>
                   <>
-                  <Textarea placeholder="Type your message here." />
+                    <Textarea 
+                      value={kvk}
+                      onChange={(e) => setKvk(e.target.value)}
+                      placeholder="KVK metnini buraya giriniz"
+                      className="min-h-[200px]"
+                    />
                     <div className="flex justify-end pt-4">
                       <Button onClick={handleKvkUpdate}>
                         KVK Metnini Güncelle
@@ -309,6 +245,8 @@ export function ProfileForm() {
                   </>
                 </CardContent>
               </Card>
+
+              <Separator />
 
               {/* Social Menu Section */}
               <Card>
