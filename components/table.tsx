@@ -77,27 +77,62 @@ export default function CryptoTable() {
 
         const enhancedData = await Promise.all(allData.map(async (coin) => {
           try {
-            const supplyResponse = await axios.get(`http://localhost:3040/v1/supply-history/latest`, {
-              params: { symbol: coin.symbol }
+            console.log("Fetching supply history for:", coin.symbol); // Debug log
+
+            const supplyResponse = await axios.get('http://localhost:3040/v1/supply-history/latest', {
+              params: { symbol: coin.symbol },
+              headers: {
+                'Content-Type': 'application/json',
+                // Eğer CORS hatası alırsanız:
+                'Access-Control-Allow-Origin': '*'
+              }
             });
-            console.log("supplyResponse",supplyResponse);
+
+            console.log("Supply response for", coin.symbol, ":", supplyResponse.data); // Debug log
 
             const supplyHistory = supplyResponse.data.history;
             const currentSupply = coin.totalSupply;
 
+            // Debug için supply verilerini kontrol edelim
+            console.log(`${coin.symbol} Supply Data:`, {
+              current: currentSupply,
+              week: supplyHistory?.['1w']?.totalSupply,
+              month: supplyHistory?.['1m']?.totalSupply,
+              year: supplyHistory?.['1y']?.totalSupply
+            });
+
             const calculateChange = (oldSupply: number) => {
-              if (!oldSupply || !currentSupply) return 0;
-              return ((currentSupply - oldSupply) / oldSupply) * 100;
+              if (!oldSupply || !currentSupply) {
+                console.log(`${coin.symbol}: oldSupply=${oldSupply}, currentSupply=${currentSupply}`);
+                return 0;
+              }
+              const change = ((currentSupply - oldSupply) / oldSupply) * 100;
+              console.log(`${coin.symbol} change calculation:`, { oldSupply, currentSupply, change });
+              return change;
             };
+
+            const weekChange = calculateChange(supplyHistory?.['1w']?.totalSupply);
+            const monthChange = calculateChange(supplyHistory?.['1m']?.totalSupply);
+            const yearChange = calculateChange(supplyHistory?.['1y']?.totalSupply);
+
+            console.log(`${coin.symbol} Final Changes:`, {
+              week: weekChange,
+              month: monthChange,
+              year: yearChange
+            });
 
             return {
               ...coin,
-              supplyChange1w: calculateChange(supplyHistory['1w']?.totalSupply),
-              supplyChange1m: calculateChange(supplyHistory['1m']?.totalSupply),
-              supplyChange1y: calculateChange(supplyHistory['1y']?.totalSupply)
+              supplyChange1w: weekChange,
+              supplyChange1m: monthChange,
+              supplyChange1y: yearChange
             };
           } catch (error) {
             console.error(`Error fetching supply history for ${coin.symbol}:`, error);
+            if (error.response) {
+              console.error('Error response:', error.response.data);
+              console.error('Error status:', error.response.status);
+            }
             return {
               ...coin,
               supplyChange1w: 0,
@@ -106,6 +141,8 @@ export default function CryptoTable() {
             };
           }
         }));
+
+        console.log("Enhanced data:", enhancedData); // Debug log
 
         setCryptoData(enhancedData);
         localStorage.setItem('cryptoData', JSON.stringify(enhancedData));
