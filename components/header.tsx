@@ -8,6 +8,9 @@ import {
   Settings, 
   User,
 } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '@/redux/store';
+import { getFooterData } from '@/redux/actions/footerActions';
 
 const menuItems = [
   { name: 'Anasayfa', href: '/dashboard' },
@@ -26,6 +29,13 @@ interface CryptoDataType {
   };
 }
 
+const formatUrl = (url: string) => {
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
+  return url;
+};
+
 export default function Header() {
   const router = useRouter();
   const [cryptoData, setCryptoData] = useState<CryptoDataType>({
@@ -33,6 +43,13 @@ export default function Header() {
     eth: { price: 0, image: '' }
   });
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch<AppDispatch>()
+  const { footer } = useSelector((state: any) => state.footer)
+  console.log(footer)
+
+  useEffect(() => {
+    dispatch(getFooterData())
+  }, [dispatch])
 
   useEffect(() => {
     const fetchCryptoData = async () => {
@@ -64,6 +81,11 @@ export default function Header() {
     
     return () => clearInterval(interval);
   }, []);
+
+  const handleSocialClick = (url: string) => {
+    const formattedUrl = formatUrl(url);
+    window.open(formattedUrl, '_blank');
+  };
 
   return (
     <header className="flex items-center justify-between px-20 py-3 border-b">
@@ -113,52 +135,35 @@ export default function Header() {
 
       {/* Social Media Icons */}
       <div className="hidden md:flex items-center space-x-4">
-        <a 
-          href="https://t.me/yourchannel" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#229ED9">
-            <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.495 7.683l-1.768 8.375c-.131.633-.496.787-1.003.49l-2.772-2.043-1.337 1.29c-.147.147-.271.271-.558.271l.198-2.831 5.165-4.666c.225-.197-.048-.307-.345-.11l-6.38 4.016-2.747-.857c-.598-.187-.61-.598.126-.885l10.725-4.13c.495-.187.928.122.696 1.08z"/>
-          </svg>
-          <span className="text-sm text-gray-700">Telegram</span>
-        </a>
-        <a 
-          href="https://instagram.com/yourprofile" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="#E1306C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M3 16V8C3 5.23858 5.23858 3 8 3H16C18.7614 3 21 5.23858 21 8V16C21 18.7614 18.7614 21 16 21H8C5.23858 21 3 18.7614 3 16Z" stroke="#E1306C" strokeWidth="2"/>
-            <path d="M17.5 6.51L17.51 6.49889" stroke="#E1306C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <span className="text-sm text-gray-700">Instagram</span>
-        </a>
-        <a 
-          href="https://twitter.com/yourprofile" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#1DA1F2">
-            <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-          </svg>
-          <span className="text-sm text-gray-700">Twitter</span>
-        </a>
-        <a 
-          href="https://youtube.com/yourchannel" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors"
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FF0000">
-            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
-          </svg>
-          <span className="text-sm text-gray-700">YouTube</span>
-        </a>
+        {footer?.socialMenu?.map((social: any) => (
+          <div
+            key={social._id}
+            onClick={() => handleSocialClick(social.url)}
+            className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer"
+          >
+            {social.title === 'Telegram' && (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#229ED9">
+                <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.495 7.683l-1.768 8.375c-.131.633-.496.787-1.003.49l-2.772-2.043-1.337 1.29c-.147.147-.271.271-.558.271l.198-2.831 5.165-4.666c.225-.197-.048-.307-.345-.11l-6.38 4.016-2.747-.857c-.598-.187-.61-.598.126-.885l10.725-4.13c.495-.187.928.122.696 1.08z"/>
+              </svg>
+            )}
+            {social.title === 'Facebook' && (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#1877F2">
+                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+              </svg>
+            )}
+            {social.title === 'Twitter' && (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#1DA1F2">
+                <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+              </svg>
+            )}
+            {social.title === 'Youtube' && (
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#FF0000">
+                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+              </svg>
+            )}
+            <span className="text-sm text-gray-700">{social.title}</span>
+          </div>
+        ))}
       </div>
 
       {/* Icons */}

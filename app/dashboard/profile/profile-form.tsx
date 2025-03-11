@@ -29,20 +29,14 @@ interface ProfileFormValues {
   verificationCode: string;
 }
 
-const stripHtmlTags = (html: string) => {
-  return html.replace(/<[^>]*>/g, '');
-};
-
 export function ProfileForm() {
-  const [currentEmail, setCurrentEmail] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const { footer, error, success } = useSelector(
     (state: any) => state.footer
   );
 
-  const [kvk, setKvk] = useState("<p></p>");
+  const [kvk, setKvk] = useState("");
   const [socialMenu, setSocialMenu] = useState<any[]>([{ title: "", url: "" }]);
 
   useEffect(() => {
@@ -52,7 +46,7 @@ export function ProfileForm() {
   useEffect(() => {
     if (footer) {
       if (footer.kvk?.content) {
-        setKvk(stripHtmlTags(footer.kvk.content));
+        setKvk(footer.kvk.content);
       }
       if (footer.socialMenu) {
         setSocialMenu(footer.socialMenu);
@@ -83,7 +77,7 @@ export function ProfileForm() {
     dispatch(
       updateKvk({
         title: "KVK Aydınlatma Metni",
-        content: `<p>${kvk}</p>`,
+        content: kvk,
       })
     );
   };
@@ -302,65 +296,6 @@ export function ProfileForm() {
           </FormikForm>
         )}
       </Formik>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Email Doğrulama</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p>
-              Email adresinize doğrulama kodu gönderildi. Lütfen gelen kodu
-              girerek email adresinizi doğrulayın.
-            </p>
-            <Formik
-              initialValues={{ verificationCode: "" }}
-              onSubmit={async (values, { setSubmitting }) => {
-                try {
-                  await dispatch(
-                    verifyEmail({
-                      email: currentEmail,
-                      verificationCode: Number(values.verificationCode),
-                    })
-                  ).unwrap();
-
-                  toast({
-                    title: "Başarılı",
-                    description: "Email adresiniz başarıyla doğrulandı.",
-                  });
-
-                  setDialogOpen(false);
-                } catch (error: any) {
-                  toast({
-                    title: "Hata",
-                    description: error.message || "Doğrulama başarısız oldu.",
-                    variant: "destructive",
-                  });
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
-            >
-              {({ isSubmitting }) => (
-                <FormikForm className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="verificationCode">Doğrulama Kodu</Label>
-                    <Field
-                      as={Input}
-                      id="verificationCode"
-                      name="verificationCode"
-                      placeholder="Doğrulama kodunu girin"
-                    />
-                  </div>
-                  <Button type="submit" disabled={isSubmitting}>
-                    Doğrula
-                  </Button>
-                </FormikForm>
-              )}
-            </Formik>
-          </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -1,12 +1,21 @@
+"use client"
+import { getFooterData } from "@/redux/actions/footerActions"
+import { AppDispatch } from "@/redux/store"
+import { useEffect } from "react"
+import { useDispatch, useSelector } from "react-redux"
+
 export default function Footer() {
+  const dispatch = useDispatch<AppDispatch>()
+  const { footer } = useSelector((state: any) => state.footer)
+
+  useEffect(() => {
+    dispatch(getFooterData())
+  }, [dispatch])
+
   return (
     <footer className="px-20 py-5 border-t">
       <p className=" text-gray-500 text-center">
-        Yasal Uyarı: Piyasa verileri Forinvest Yazılım ve Teknolojileri Hizmetleri A.Ş. tarafından sağlanmaktadır. 
-        Hisse senedi verileri 15 dakika, Tahvil-Bono-Repo özet verileri 15 dakika gecikmelidir. 
-        Burada yer alan yatırım bilgi, yorum ve tavsiyeleri yatırım danışmanlığı kapsamında değildir. 
-        Yatırım danışmanlığı hizmeti; aracı kurumlar, portföy yönetim şirketleri, mevduat kabul etmeyen bankalar ile 
-        müşteri arasında imzalanacak yatırım danışmanlığı sözleşmesi çerçevesinde sunulmaktadır.
+       {footer?.kvk.content}
       </p>
     </footer>
   );
