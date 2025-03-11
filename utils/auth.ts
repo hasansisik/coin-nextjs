@@ -6,7 +6,7 @@ import Cookies from 'js-cookie';
 export function syncTokenToCookie() {
     const token = localStorage.getItem('accessToken');
     if (token) {
-        Cookies.set('token', token);
+        Cookies.set('token', token, { sameSite: 'strict' });
     } else {
         Cookies.remove('token');
     }
@@ -20,4 +20,10 @@ export function syncTokenToLocalStorage() {
     } else {
         localStorage.removeItem('accessToken');
     }
+}
+
+// Token kontrolü için yardımcı fonksiyon
+export function isAuthenticated() {
+    const token = Cookies.get('token');
+    return !!token;
 }

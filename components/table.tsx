@@ -40,53 +40,73 @@ export default function CryptoTable() {
   useEffect(() => {
     const fetchCryptoData = async () => {
       try {
-        // Önce localStorage'dan veriyi al ve state'e set et
+        // Try to get cached data first
         const cachedData = localStorage.getItem('cryptoData');
-        if (cachedData) {
+        const cachedTimestamp = localStorage.getItem('cryptoDataTimestamp');
+        const now = Date.now();
+        
+        // Use cached data if it exists and is less than 5 minutes old
+        if (cachedData && cachedTimestamp && (now - Number(cachedTimestamp)) < 5 * 60 * 1000) {
+          setCryptoData(JSON.parse(cachedData));
+          setIsLoading(false);
+          return;
+        }
+
+        const pages = [1, 2, 3, 4, 5];
+        const allData = [];
+
+        // Sequential requests instead of parallel to avoid rate limiting
+        for (const page of pages) {
+          try {
+            const response = await axios.get('https://api.coingecko.com/api/v3/coins/markets', {
+              params: {
+                vs_currency: 'usd',
+                order: 'market_cap_desc',
+                per_page: 100,
+                page: page,
+                sparkline: false,
+                price_change_percentage: '1h,24h,7d'
+              }
+            });
+
+            const pageData = response.data.map((coin: any, index: number) => ({
+              id: (page - 1) * 100 + index + 1,
+              name: coin.name,
+              symbol: coin.symbol.toUpperCase(),
+              icon: coin.image,
+              price: coin.current_price,
+              priceChange1h: coin.price_change_percentage_1h_in_currency || 0,
+              priceChange24h: coin.price_change_percentage_24h || 0,
+              priceChange7d: coin.price_change_percentage_7d_in_currency || 0,
+              volume24h: coin.total_volume,
+              marketCap: coin.market_cap,
+              totalSupply: coin.total_supply || 0,
+            }));
+
+            allData.push(...pageData);
+            
+            // Add a small delay between requests
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          } catch (error) {
+            console.warn(`Error fetching page ${page}:`, error);
+            continue; // Continue with next page if one fails
+          }
+        }
+
+        if (allData.length > 0) {
+          setCryptoData(allData);
+          localStorage.setItem('cryptoData', JSON.stringify(allData));
+          localStorage.setItem('cryptoDataTimestamp', String(Date.now()));
+        } else if (cachedData) {
+          // Fall back to cached data if API calls fail
           setCryptoData(JSON.parse(cachedData));
         }
 
-        const pages = [1, 2, 3, 4, 5]; // 5 sayfa çekeceğiz
-        const promises = pages.map(page =>
-          axios.get('https://api.coingecko.com/api/v3/coins/markets', {
-            params: {
-              vs_currency: 'usd',
-              order: 'market_cap_desc',
-              per_page: 100,
-              page: page,
-              sparkline: false,
-              price_change_percentage: '1h,24h,7d'
-            }
-          })
-        );
-
-        const responses = await Promise.all(promises);
-        console.log("responses",responses);
-        const allData = responses.flatMap((response, pageIndex) =>
-          response.data.map((coin: any, index: number) => ({
-            id: pageIndex * 100 + index + 1,
-            name: coin.name,
-            symbol: coin.symbol.toUpperCase(),
-            icon: coin.image,
-            price: coin.current_price,
-            priceChange1h: coin.price_change_percentage_1h_in_currency || 0,
-            priceChange24h: coin.price_change_percentage_24h || 0,
-            priceChange7d: coin.price_change_percentage_7d_in_currency || 0,
-            volume24h: coin.total_volume,
-            marketCap: coin.market_cap,
-            totalSupply: coin.total_supply || 0,
-          }))
-        );
-
-        // API çağrısı başarılı olursa yeni veriyi kaydet
-        setCryptoData(allData);
-        localStorage.setItem('cryptoData', JSON.stringify(allData));
-
       } catch (error) {
         console.error('Error fetching crypto data:', error);
-        // Hata durumunda localStorage'dan veri al
+        // Use cached data in case of complete failure
         const cachedData = localStorage.getItem('cryptoData');
-        if (cachedData && !cryptoData.length) {
+        if (cachedData) {
           setCryptoData(JSON.parse(cachedData));
         }
       } finally {

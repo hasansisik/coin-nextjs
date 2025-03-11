@@ -47,8 +47,6 @@ export default function UserPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { users } = useSelector((state: RootState) => state.user);
   const { toast } = useToast()
-  const  {user}  = useSelector((state: RootState) => state.user);
-  console.log("user",user)
 
   useEffect(() => {
     dispatch(getAllUsers());
@@ -90,7 +88,7 @@ export default function UserPage() {
       initialValues: {
         name: editingUser?.name || "",
         email: editingUser?.email || "",
-        role: editingUser?.role || "user",
+        role: editingUser?.role || "user", // Varsayılan değer "user" olarak ayarlandı
         password: "",
         confirmPassword: "",
       },
@@ -137,7 +135,7 @@ export default function UserPage() {
                 <Input 
                   id="name"
                   name="name"
-                  placeholder="Name"
+                  placeholder="İsim Soyisim"
                   onChange={formik.handleChange}
                   value={formik.values.name}
                   className="max-w-lg"
@@ -176,7 +174,7 @@ export default function UserPage() {
                 <Input 
                   id="password"
                   name="password"
-                  placeholder="Password"
+                  placeholder="Şifre"
                   type="password"
                   onChange={formik.handleChange}
                   value={formik.values.password}
@@ -188,7 +186,7 @@ export default function UserPage() {
                 <Input 
                   id="confirmPassword"
                   name="confirmPassword"
-                  placeholder="Confirm Password"
+                  placeholder="Şifre Tekrar"
                   type="password"
                   onChange={formik.handleChange}
                   value={formik.values.confirmPassword}
@@ -245,7 +243,7 @@ export default function UserPage() {
         <Drawer open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DrawerContent className="pb-4">
             <DrawerHeader className="border-b pb-4">
-              <DrawerTitle className="text-xl font-semibold">Edit User</DrawerTitle>
+              <DrawerTitle className="text-xl font-semibold">Kullanıcı Düzenle</DrawerTitle>
             </DrawerHeader>
             <UserForm isEdit={true} />
           </DrawerContent>

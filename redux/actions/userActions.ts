@@ -34,7 +34,7 @@ export interface EditProfilePayload {
 }
 
 export interface EditUserPayload {
-  id: string;  // userId yerine id kullanacağız
+  id: string; // userId yerine id kullanacağız
   name: string;
   email: string;
   role: string;
@@ -48,12 +48,22 @@ export const register = createAsyncThunk(
   "user/register",
   async (payload: RegisterPayload, thunkAPI) => {
     try {
-      const { data } = await axios.post(`${server}/auth/register`, payload);
-      localStorage.setItem("accessToken", data.user.token);
-      syncTokenToCookie(); // Token'ı cookie'ye senkronize et
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        return thunkAPI.rejectWithValue("Yetkilendirme gerekli");
+      }
+
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const { data } = await axios.post(`${server}/auth/register`, payload, config);
       return data.user;
     } catch (error: any) {
-      return thunkAPI.rejectWithValue(error.response.data.message);
+      const errorMessage = error.response?.data?.message || "Kayıt işlemi başarısız";
+      return thunkAPI.rejectWithValue(errorMessage);
     }
   }
 );
@@ -69,8 +79,9 @@ export const login = createAsyncThunk(
       return data.user;
     } catch (error: any) {
       // API'den gelen hata mesajını yakala
-      const errorMessage = error.response?.data?.message || 
-                         'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.';
+      const errorMessage =
+        error.response?.data?.message ||
+        "Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.";
       return thunkAPI.rejectWithValue(errorMessage);
     }
   }
@@ -141,7 +152,9 @@ export const forgotPassword = createAsyncThunk(
   "user/forgotPassword",
   async (email: string, thunkAPI) => {
     try {
-      const { data } = await axios.post(`${server}/auth/forgot-password`, { email });
+      const { data } = await axios.post(`${server}/auth/forgot-password`, {
+        email,
+      });
       return data.message;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -157,7 +170,10 @@ export const resetPassword = createAsyncThunk(
   "user/resetPassword",
   async (payload: ResetPasswordPayload, thunkAPI) => {
     try {
-      const { data } = await axios.post(`${server}/auth/reset-password`, payload);
+      const { data } = await axios.post(
+        `${server}/auth/reset-password`,
+        payload
+      );
       return data.message;
     } catch (error: any) {
       return thunkAPI.rejectWithValue(
@@ -218,9 +234,9 @@ export const editUsers = createAsyncThunk(
   async (payload: EditUserPayload, thunkAPI) => {
     try {
       const token = localStorage.getItem("accessToken");
-      const { id, ...updateData } = payload;  // id'yi ayırıp geri kalanını updateData'ya koy
+      const { id, ...updateData } = payload; // id'yi ayırıp geri kalanını updateData'ya koy
       const { data } = await axios.put(
-        `${server}/auth/users/${id}`,  // userId yerine id kullanıyoruz
+        `${server}/auth/users/${id}`, // userId yerine id kullanıyoruz
         updateData,
         {
           headers: {
