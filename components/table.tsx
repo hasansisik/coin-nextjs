@@ -90,7 +90,6 @@ export default function CryptoTable() {
           }))
         );
       } catch (error) {
-        console.error("Error fetching CoinGecko data:", error);
         return [];
       }
     };
@@ -188,7 +187,6 @@ export default function CryptoTable() {
           };
         });
       } catch (error) {
-        console.error("Error fetching supply history:", error);
         return coins;
       }
     };
@@ -212,20 +210,14 @@ export default function CryptoTable() {
             coinsData = newCoins;
           }
         } catch (error) {
-          console.error("CoinGecko error:", error);
-          // CoinGecko hatası durumunda localStorage verileriyle devam et
         }
 
-        // Eğer herhangi bir veri varsa (ya localStorage'dan ya da CoinGecko'dan)
-        // Supply history verilerini çek ve güncelle
         if (coinsData.length > 0) {
-          console.log("Fetching supply history for coins:", coinsData.length);
           const enhancedCoins = await fetchSupplyHistory(coinsData);
           setCryptoData(enhancedCoins);
           localStorage.setItem("cryptoData", JSON.stringify(enhancedCoins));
         }
       } catch (error) {
-        console.error("Error in fetchData:", error);
         // Herhangi bir hata durumunda en azından localStorage verilerini göster
         const cachedData = localStorage.getItem("cryptoData");
         if (cachedData) {

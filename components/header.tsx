@@ -74,7 +74,6 @@ export default function Header() {
         });
         setIsLoading(false);
       } catch (error) {
-        console.error("Kripto verileri çekilemedi:", error);
         setIsLoading(false);
       }
     };
@@ -99,7 +98,6 @@ export default function Header() {
       });
       router.push("/");
     } catch (error) {
-      console.error("Logout failed:", error);
       toast({
         variant: "destructive",
         title: "Hata",
