@@ -116,7 +116,7 @@ export default function Header() {
           className="flex items-center space-x-2 bg-neutral-100 px-10 py-2 rounded-full"
         >
           <Bitcoin className="h-7 w-7 text-primary" />
-          <span className="text-md font-bold">Coin Market</span>
+          <span className="text-md font-bold">Kriptotek</span>
         </Link>
 
         <nav className="hidden md:flex items-center space-x-4  bg-neutral-100 px-2 py-1 rounded-full">

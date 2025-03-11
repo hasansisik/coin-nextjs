@@ -20,10 +20,12 @@ interface CryptoData {
   volume24h: number;
   marketCap: number;
   totalSupply: number;
-  supplyChange1d: { change: number | null, supply: number | null };
-  supplyChange1w: { change: number | null, supply: number | null };
-  supplyChange1m: { change: number | null, supply: number | null };
-  supplyChange1y: { change: number | null, supply: number | null };
+  circulatingSupply: number;
+  maxSupply: number | null;
+  supplyChange1d: { change: number | null; supply: number | null };
+  supplyChange1w: { change: number | null; supply: number | null };
+  supplyChange1m: { change: number | null; supply: number | null };
+  supplyChange1y: { change: number | null; supply: number | null };
 }
 
 interface SupplyData {
@@ -78,7 +80,9 @@ export default function CryptoTable() {
             price: coin.current_price,
             volume24h: coin.total_volume,
             marketCap: coin.market_cap,
+            circulatingSupply: coin.circulating_supply || 0,
             totalSupply: coin.total_supply || 0,
+            maxSupply: coin.max_supply,
             supplyChange1d: { change: 0, supply: 0 },
             supplyChange1w: { change: 0, supply: 0 },
             supplyChange1m: { change: 0, supply: 0 },
@@ -93,52 +97,72 @@ export default function CryptoTable() {
 
     const fetchSupplyHistory = async (coins: CryptoData[]) => {
       try {
-        const symbols = coins.map(coin => coin.symbol.toLowerCase());
-        const supplyResponse = await axios.get(`${server}/supply-history/bulk`, {
-          params: { symbols: symbols.join(',') }
-        });
+        const symbols = coins.map((coin) => coin.symbol.toLowerCase());
+        const supplyResponse = await axios.get(
+          `${server}/supply-history/bulk`,
+          {
+            params: { symbols: symbols.join(",") },
+          }
+        );
 
         const supplyDataMap: SupplyDataMap = supplyResponse.data.data;
 
-        return coins.map(coin => {
+        return coins.map((coin) => {
           const history = supplyDataMap[coin.symbol.toUpperCase()];
           const currentSupply = coin.totalSupply;
 
-          if (!history || !history.dailySupplies || history.dailySupplies.length === 0) {
+          if (
+            !history ||
+            !history.dailySupplies ||
+            history.dailySupplies.length === 0
+          ) {
             return {
               ...coin,
               supplyChange1d: { change: null, supply: null },
               supplyChange1w: { change: null, supply: null },
               supplyChange1m: { change: null, supply: null },
-              supplyChange1y: { change: null, supply: null }
+              supplyChange1y: { change: null, supply: null },
             };
           }
 
           const now = new Date();
           const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
           const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          const oneYearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          const oneMonthAgo = new Date(
+            now.getTime() - 30 * 24 * 60 * 60 * 1000
+          );
+          const oneYearAgo = new Date(
+            now.getTime() - 365 * 24 * 60 * 60 * 1000
+          );
 
           const findClosestSupply = (targetDate: Date) => {
-            const supplies = history.dailySupplies.filter((supply: SupplyData) => 
-              Math.abs(new Date(supply.timestamp).getTime() - targetDate.getTime()) <= 24 * 60 * 60 * 1000
+            const supplies = history.dailySupplies.filter(
+              (supply: SupplyData) =>
+                Math.abs(
+                  new Date(supply.timestamp).getTime() - targetDate.getTime()
+                ) <=
+                24 * 60 * 60 * 1000
             );
 
             if (supplies.length === 0) return null;
 
             return supplies.reduce((prev, curr) => {
-              const prevDiff = Math.abs(new Date(prev.timestamp).getTime() - targetDate.getTime());
-              const currDiff = Math.abs(new Date(curr.timestamp).getTime() - targetDate.getTime());
+              const prevDiff = Math.abs(
+                new Date(prev.timestamp).getTime() - targetDate.getTime()
+              );
+              const currDiff = Math.abs(
+                new Date(curr.timestamp).getTime() - targetDate.getTime()
+              );
               return prevDiff < currDiff ? prev : curr;
             });
           };
 
           const calculateChange = (oldSupply: number | null) => {
-            if (!oldSupply || !currentSupply) return { change: null, supply: null };
+            if (!oldSupply || !currentSupply)
+              return { change: null, supply: null };
             return {
               change: ((currentSupply - oldSupply) / oldSupply) * 100,
-              supply: oldSupply
+              supply: oldSupply,
             };
           };
 
@@ -149,10 +173,18 @@ export default function CryptoTable() {
 
           return {
             ...coin,
-            supplyChange1d: daySupply ? calculateChange(daySupply.totalSupply) : { change: null, supply: null },
-            supplyChange1w: weekSupply ? calculateChange(weekSupply.totalSupply) : { change: null, supply: null },
-            supplyChange1m: monthSupply ? calculateChange(monthSupply.totalSupply) : { change: null, supply: null },
-            supplyChange1y: yearSupply ? calculateChange(yearSupply.totalSupply) : { change: null, supply: null }
+            supplyChange1d: daySupply
+              ? calculateChange(daySupply.totalSupply)
+              : { change: null, supply: null },
+            supplyChange1w: weekSupply
+              ? calculateChange(weekSupply.totalSupply)
+              : { change: null, supply: null },
+            supplyChange1m: monthSupply
+              ? calculateChange(monthSupply.totalSupply)
+              : { change: null, supply: null },
+            supplyChange1y: yearSupply
+              ? calculateChange(yearSupply.totalSupply)
+              : { change: null, supply: null },
           };
         });
       } catch (error) {
@@ -165,7 +197,7 @@ export default function CryptoTable() {
       try {
         setIsLoading(true);
         let coinsData: CryptoData[] = [];
-        
+
         // Önce localStorage'dan veriyi al
         const cachedData = localStorage.getItem("cryptoData");
         if (cachedData) {
@@ -219,30 +251,45 @@ export default function CryptoTable() {
       .replace("$", "");
   };
 
-  const formatCurrency = (num: number): string => {
+  const formatCurrency = (num: number | null): string => {
+    if (num === null) return '∞';
     return `$${num.toLocaleString("en-US")}`;
   };
 
-  const formatPercentage = (value: { change: number | null, supply: number | null }): React.ReactElement => {
+  const formatPercentage = (value: {
+    change: number | null;
+    supply: number | null;
+  }): React.ReactElement => {
     if (value.change === null || isNaN(value.change)) {
       return <span className="text-gray-500">-</span>;
     }
 
-    const color = value.change === 0 ? "text-gray-500" : 
-                  value.change < 0 ? "text-red-500" : 
-                  "text-green-500";
-    const prefix = value.change === 0 ? "" : 
-                  value.change < 0 ? "▼ " : 
-                  "▲ ";
-                  
-    const formattedPercent = Math.abs(value.change) > 1000 ? 
-      `${Math.round(value.change)}` : 
-      value.change.toFixed(1);
+    const color =
+      value.change === 0
+        ? "text-gray-500"
+        : value.change < 0
+        ? "text-red-500"
+        : "text-green-500";
+    const prefix = value.change === 0 ? "" : value.change < 0 ? "▼ " : "▲ ";
+
+    let formattedPercent;
+    if (Math.abs(value.change) > 1000) {
+      formattedPercent = `${Math.round(value.change)}`;
+    } else if (Math.abs(value.change) < 0.05) {
+      formattedPercent = "0.0";
+    } else {
+      formattedPercent = value.change.toFixed(1);
+    }
 
     return (
       <div className={`${color} flex flex-col`}>
-        <span>{prefix}{formattedPercent}%</span>
-        <span className="text-sm opacity-75">{value.supply?.toLocaleString() ?? '-'}</span>
+        <span>
+          {prefix}
+          {formattedPercent}%
+        </span>
+        <span className="text-sm opacity-75">
+          {value.supply?.toLocaleString() ?? "-"}
+        </span>
       </div>
     );
   };
@@ -258,16 +305,18 @@ export default function CryptoTable() {
           <table className="w-full border-collapse">
             <thead>
               <tr className="text-left text-base font-medium text-gray-800">
-                <th className="px-6 py-3">#</th>
-                <th className="px-16 py-3">Coin</th>
-                <th className="px-8 py-3">Price</th>
+                <th className="px-4 py-3">#</th>
+                <th className="px-4 py-3">Coin</th>
+                <th className="px-4 py-3">Price</th>
                 <th className="px-4 py-3">Supply (1d)</th>
                 <th className="px-4 py-3">Supply (1w)</th>
                 <th className="px-4 py-3">Supply (1m)</th>
                 <th className="px-4 py-3">Supply (1y)</th>
                 <th className="px-4 py-3">24h Volume</th>
                 <th className="px-4 py-3">Market Cap</th>
+                <th className="px-4 py-3">Circulating Supply</th>
                 <th className="px-4 py-3">Total Supply</th>
+                <th className="px-4 py-3">Max Supply</th>
               </tr>
             </thead>
             <tbody>
@@ -276,8 +325,8 @@ export default function CryptoTable() {
                   key={crypto.id}
                   className="border-t border-gray-200 text-base hover:bg-gray-50"
                 >
-                  <td className="px-6 py-4 font-bold">{crypto.id}</td>
-                  <td className="px-16 py-4">
+                  <td className="px-4 py-4 font-bold">{crypto.id}</td>
+                  <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
                       <img
                         src={crypto.icon}
@@ -290,7 +339,7 @@ export default function CryptoTable() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 font-medium">
+                  <td className="px-4 py-4 font-medium">
                     ${formatNumber(crypto.price)}
                   </td>
                   <td className="px-4 py-4">
@@ -312,7 +361,13 @@ export default function CryptoTable() {
                     {formatCurrency(crypto.marketCap)}
                   </td>
                   <td className="px-4 py-4">
+                    {formatCurrency(crypto.circulatingSupply)}
+                  </td>
+                  <td className="px-4 py-4">
                     {formatCurrency(crypto.totalSupply)}
+                  </td>
+                  <td className="px-4 py-4">
+                    {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
                   </td>
                 </tr>
               ))}

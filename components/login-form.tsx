@@ -85,7 +85,7 @@ export function LoginForm({
             <Bitcoin className="size-8" />
           </div>
         </a>
-        <h1 className="text-xl font-bold">Coin Market&apos;e Hoşgeldiniz</h1>
+        <h1 className="text-xl font-bold">Kriptotek&apos;e Hoşgeldiniz</h1>
         <div className="text-center text-sm">
           Bir hesabın yok mu?{" "}
           <a href="#" className="underline underline-offset-4" onClick={handleApplyClick}>
