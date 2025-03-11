@@ -12,8 +12,8 @@ import { useToast } from "@/components/ui/use-toast";
 
 const menuItems = [
   { name: "Anasayfa", href: "/dashboard" },
-  { name: "Kullanıcılar", href: "/dashboard/user" },
-  { name: "Ayarlar", href: "/dashboard/profile" },
+  { name: "Kullanıcılar", href: "/dashboard/user", adminOnly: true },
+  { name: "Ayarlar", href: "/dashboard/profile", adminOnly: true },
 ];
 
 interface CryptoDataType {
@@ -120,15 +120,17 @@ export default function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center space-x-4  bg-neutral-100 px-2 py-1 rounded-full">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white "
-            >
-              {item.name}
-            </Link>
-          ))}
+          {menuItems
+            .filter(item => !item.adminOnly || user?.role === 'admin')
+            .map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white "
+              >
+                {item.name}
+              </Link>
+            ))}
         </nav>
       </div>
 
@@ -208,13 +210,15 @@ export default function Header() {
             >
               <LogOut className="h-7 w-7 text-black group-hover:text-white" />
             </Button>
-            <Button 
-              className="rounded-full bg-neutral-100 group h-12 w-12" 
-              size="icon"
-              onClick={() => router.push("/dashboard/profile")}
-            >
-              <User className="h-7 w-7 text-black group-hover:text-white" />
-            </Button>
+            {user.role === 'admin' && (
+              <Button 
+                className="rounded-full bg-neutral-100 group h-12 w-12" 
+                size="icon"
+                onClick={() => router.push("/dashboard/profile")}
+              >
+                <User className="h-7 w-7 text-black group-hover:text-white" />
+              </Button>
+            )}
           </>
         ) : (
           <Button
