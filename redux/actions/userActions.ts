@@ -44,6 +44,13 @@ export interface AgainEmailPayload {
   email: string;
 }
 
+interface LoginResponse {
+  user: {
+    token: string;
+    [key: string]: any;
+  };
+}
+
 export const register = createAsyncThunk(
   "user/register",
   async (payload: RegisterPayload, thunkAPI) => {
@@ -68,7 +75,7 @@ export const register = createAsyncThunk(
   }
 );
 
-export const login = createAsyncThunk(
+export const login = createAsyncThunk<LoginResponse['user'], LoginPayload>(
   "user/login",
   async (payload: LoginPayload, thunkAPI) => {
     try {

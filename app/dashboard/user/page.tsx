@@ -66,6 +66,7 @@ export default function UserPage() {
       })
       dispatch(getAllUsers());
     } catch (error) {
+      console.error('Delete error:', error);
       toast({
         title: "Hata",
         description: "Kullanıcı silinirken bir hata oluştu.",
@@ -116,6 +117,7 @@ export default function UserPage() {
           }
           dispatch(getAllUsers());
         } catch (error) {
+          console.error('Form submission error:', error);
           toast({
             title: "Hata",
             description: isEdit ? "Güncelleme sırasında bir hata oluştu." : "Kullanıcı oluşturulurken bir hata oluştu.",
@@ -261,7 +263,7 @@ export default function UserPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {users?.map((user) => (
             <TableRow key={user._id}>
               <TableCell className="flex items-center gap-2">
                 <Avatar>

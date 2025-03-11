@@ -130,7 +130,6 @@ export function ProfileForm() {
             if (email) {
               try {
                 await dispatch(editProfile({ email })).unwrap();
-                setDialogOpen(true);
                 toast({
                   title: "Doğrulama Kodu Gönderildi",
                   description:
@@ -209,7 +208,7 @@ export function ProfileForm() {
           }
         }}
       >
-        {({ isSubmitting, setFieldValue }) => (
+        {({ isSubmitting }) => (
           <FormikForm className="space-y-8">
             <div className="grid gap-8">
               {/* Policies Section */}

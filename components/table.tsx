@@ -16,13 +16,12 @@ interface CryptoData {
   symbol: string;
   icon: string;
   price: number;
-
+  priceChange1h: number;
+  priceChange24h: number;
+  priceChange7d: number;
   volume24h: number;
   marketCap: number;
   totalSupply: number;
-  supplyChange1w: number;
-  supplyChange1m: number;
-  supplyChange1y: number;
 }
 
 export default function CryptoTable() {
@@ -56,6 +55,7 @@ export default function CryptoTable() {
               per_page: 100,
               page: page,
               sparkline: false,
+              price_change_percentage: '1h,24h,7d'
             }
           })
         );
@@ -69,83 +69,18 @@ export default function CryptoTable() {
             symbol: coin.symbol.toUpperCase(),
             icon: coin.image,
             price: coin.current_price,
+            priceChange1h: coin.price_change_percentage_1h_in_currency || 0,
+            priceChange24h: coin.price_change_percentage_24h || 0,
+            priceChange7d: coin.price_change_percentage_7d_in_currency || 0,
             volume24h: coin.total_volume,
             marketCap: coin.market_cap,
             totalSupply: coin.total_supply || 0,
           }))
         );
 
-        const enhancedData = await Promise.all(allData.map(async (coin) => {
-          try {
-            console.log("Fetching supply history for:", coin.symbol); // Debug log
-
-            const supplyResponse = await axios.get('http://localhost:3040/v1/supply-history/latest', {
-              params: { symbol: coin.symbol },
-              headers: {
-                'Content-Type': 'application/json',
-                // Eğer CORS hatası alırsanız:
-                'Access-Control-Allow-Origin': '*'
-              }
-            });
-
-            console.log("Supply response for", coin.symbol, ":", supplyResponse.data); // Debug log
-
-            const supplyHistory = supplyResponse.data.history;
-            const currentSupply = coin.totalSupply;
-
-            // Debug için supply verilerini kontrol edelim
-            console.log(`${coin.symbol} Supply Data:`, {
-              current: currentSupply,
-              week: supplyHistory?.['1w']?.totalSupply,
-              month: supplyHistory?.['1m']?.totalSupply,
-              year: supplyHistory?.['1y']?.totalSupply
-            });
-
-            const calculateChange = (oldSupply: number) => {
-              if (!oldSupply || !currentSupply) {
-                console.log(`${coin.symbol}: oldSupply=${oldSupply}, currentSupply=${currentSupply}`);
-                return 0;
-              }
-              const change = ((currentSupply - oldSupply) / oldSupply) * 100;
-              console.log(`${coin.symbol} change calculation:`, { oldSupply, currentSupply, change });
-              return change;
-            };
-
-            const weekChange = calculateChange(supplyHistory?.['1w']?.totalSupply);
-            const monthChange = calculateChange(supplyHistory?.['1m']?.totalSupply);
-            const yearChange = calculateChange(supplyHistory?.['1y']?.totalSupply);
-
-            console.log(`${coin.symbol} Final Changes:`, {
-              week: weekChange,
-              month: monthChange,
-              year: yearChange
-            });
-
-            return {
-              ...coin,
-              supplyChange1w: weekChange,
-              supplyChange1m: monthChange,
-              supplyChange1y: yearChange
-            };
-          } catch (error) {
-            console.error(`Error fetching supply history for ${coin.symbol}:`, error);
-            if (error.response) {
-              console.error('Error response:', error.response.data);
-              console.error('Error status:', error.response.status);
-            }
-            return {
-              ...coin,
-              supplyChange1w: 0,
-              supplyChange1m: 0,
-              supplyChange1y: 0
-            };
-          }
-        }));
-
-        console.log("Enhanced data:", enhancedData); // Debug log
-
-        setCryptoData(enhancedData);
-        localStorage.setItem('cryptoData', JSON.stringify(enhancedData));
+        // API çağrısı başarılı olursa yeni veriyi kaydet
+        setCryptoData(allData);
+        localStorage.setItem('cryptoData', JSON.stringify(allData));
 
       } catch (error) {
         console.error('Error fetching crypto data:', error);
@@ -204,9 +139,9 @@ export default function CryptoTable() {
                 <th className="px-6 py-3">#</th>
                 <th className="px-16 py-3">Coin</th>
                 <th className="px-8 py-3">Price</th>
-                <th className="px-4 py-3">Supply (1w)</th>
-                <th className="px-4 py-3">Supply (1m)</th>
-                <th className="px-4 py-3">Supply (1y)</th>
+                <th className="px-6 py-3">1h</th>
+                <th className="px-6 py-3">24h</th>
+                <th className="px-4 py-3">7d</th>
                 <th className="px-4 py-3">24h Volume</th>
                 <th className="px-4 py-3">Market Cap</th>
                 <th className="px-4 py-3">Total Supply</th>
@@ -233,9 +168,9 @@ export default function CryptoTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-medium">${formatNumber(crypto.price)}</td>
-                  <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1w)}</td>
-                  <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1m)}</td>
-                  <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1y)}</td>
+                  <td className="px-6 py-4">{formatPercentage(crypto.priceChange1h)}</td>
+                  <td className="px-6 py-4">{formatPercentage(crypto.priceChange24h)}</td>
+                  <td className="px-6 py-4">{formatPercentage(crypto.priceChange7d)}</td>
                   <td className="px-4 py-4">{formatCurrency(crypto.volume24h)}</td>
                   <td className="px-4 py-4">{formatCurrency(crypto.marketCap)}</td>
                   <td className="px-4 py-4">{formatCurrency(crypto.totalSupply)}</td>

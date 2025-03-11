@@ -45,12 +45,12 @@ export function LoginForm({
     },
     onSubmit: async (values) => {
       try {
-        const actionResult = await dispatch(login(values));
+        const actionResult = await dispatch(login(values) as any);
 
         if (actionResult.type === 'user/login/fulfilled') {
           toast({
             title: "Kullanıcı Girişi Başarılı",
-            description: "Hoşgeldiniz! Ana sayfaya yönlendiriliyorsunuz.",
+            description: "Hoşgeldiniz! Ana sayfaya yönlendiriliyorsunuz." as React.ReactNode,
             variant: "default",
           });
           router.push("/dashboard");
@@ -58,13 +58,13 @@ export function LoginForm({
           const errorMessage = actionResult.payload || 'Giriş yapılamadı';
           toast({
             title: "Giriş Başarısız",
-            description: errorMessage,
+            description: errorMessage as React.ReactNode,
           });
         }
       } catch (error: any) {
         toast({
           title: "Sistem Hatası",
-          description: "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+          description: "Beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin." as React.ReactNode,
           variant: "destructive",
         });
       }
