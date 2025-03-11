@@ -1,5 +1,5 @@
 "use client"
-import { GalleryVerticalEnd } from "lucide-react"
+import { Bitcoin, GalleryVerticalEnd } from "lucide-react"
 import { useFormik } from "formik"
 import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useState } from "react"
+import { PrivacyPolicyDialog } from "./privacy-policy-dialog"
 
 export function LoginForm({
   className,
@@ -17,6 +19,7 @@ export function LoginForm({
   const router = useRouter()
   const dispatch = useDispatch()
   const { toast } = useToast()
+  const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false)
 
   const formik = useFormik({
     initialValues: {
@@ -68,18 +71,24 @@ export function LoginForm({
     }
   });
 
+  const handleApplyClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    const mailtoLink = `mailto:info@gmail.com?subject=${encodeURIComponent('Hesap Oluşturmak İstiyorum')}&body=${encodeURIComponent('Web sitenize kayıt olup başvuru yapmak istiyorum')}`
+    window.location.href = mailtoLink
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <div className="flex flex-col items-center gap-2">
         <a href="#" className="flex flex-col items-center gap-2 font-medium">
           <div className="flex size-8 items-center justify-center rounded-md">
-            <GalleryVerticalEnd className="size-6" />
+            <Bitcoin className="size-8" />
           </div>
         </a>
         <h1 className="text-xl font-bold">Coin Market&apos;e Hoşgeldiniz</h1>
         <div className="text-center text-sm">
           Bir hesabın yok mu?{" "}
-          <a href="#" className="underline underline-offset-4">
+          <a href="#" className="underline underline-offset-4" onClick={handleApplyClick}>
             Başvur
           </a>
         </div>
@@ -120,9 +129,18 @@ export function LoginForm({
       </form>
 
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
-        Politikaları Onaylıyorum <a href="#">Gizlilik Politikası</a>{" "}
-        ve <a href="#">Yatırım Tavsiyesi Değildir</a>.
+        Politikaları Onaylıyorum{" "}
+        <a href="#" onClick={(e) => {
+          e.preventDefault()
+          setPrivacyPolicyOpen(true)
+        }}>
+          Gizlilik Politikası
+        </a>
       </div>
+      <PrivacyPolicyDialog
+        open={privacyPolicyOpen}
+        onOpenChange={setPrivacyPolicyOpen}
+      />
     </div>
   )
 }
