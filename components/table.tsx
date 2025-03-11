@@ -24,8 +24,6 @@ interface CryptoData {
   maxSupply: number | null;
   supplyChange1d: { change: number | null; supply: number | null };
   supplyChange1w: { change: number | null; supply: number | null };
-  supplyChange1m: { change: number | null; supply: number | null };
-  supplyChange1y: { change: number | null; supply: number | null };
 }
 
 interface SupplyData {
@@ -85,8 +83,6 @@ export default function CryptoTable() {
             maxSupply: coin.max_supply,
             supplyChange1d: { change: 0, supply: 0 },
             supplyChange1w: { change: 0, supply: 0 },
-            supplyChange1m: { change: 0, supply: 0 },
-            supplyChange1y: { change: 0, supply: 0 },
           }))
         );
       } catch (error) {
@@ -119,8 +115,6 @@ export default function CryptoTable() {
               ...coin,
               supplyChange1d: { change: null, supply: null },
               supplyChange1w: { change: null, supply: null },
-              supplyChange1m: { change: null, supply: null },
-              supplyChange1y: { change: null, supply: null },
             };
           }
 
@@ -267,10 +261,12 @@ export default function CryptoTable() {
     let formattedPercent;
     if (Math.abs(value.change) > 1000) {
       formattedPercent = `${Math.round(value.change)}`;
-    } else if (Math.abs(value.change) < 0.05) {
-      formattedPercent = "0.0";
+    } else if (Math.abs(value.change) < 0.001) {
+      formattedPercent = "0.000";
+    } else if (Math.abs(value.change) < 1) {
+      formattedPercent = value.change.toFixed(3);
     } else {
-      formattedPercent = value.change.toFixed(1);
+      formattedPercent = value.change.toFixed(2);
     }
 
     return (
@@ -280,7 +276,7 @@ export default function CryptoTable() {
           {formattedPercent}%
         </span>
         <span className="text-sm opacity-75">
-          {value.supply?.toLocaleString() ?? "-"}
+          {value.supply ? formatCurrency(value.supply) : "-"}
         </span>
       </div>
     );
@@ -302,7 +298,6 @@ export default function CryptoTable() {
                 <th className="px-2 py-2">Fiyat</th>
                 <th className="px-2 py-2">Dolaşımdaki Arz (1g)</th>
                 <th className="px-2 py-2">Dolaşımdaki Arz (1h)</th>
-                <th className="px-2 py-2">Dolaşımdaki Arz (1a)</th>
                 <th className="px-2 py-2">24s Hacim</th>
                 <th className="px-2 py-2">Market Değeri</th>
                 <th className="px-2 py-2">Dolaşım Arzı</th>
@@ -339,10 +334,6 @@ export default function CryptoTable() {
                   <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1w)}
                   </td>
-                  <td className="px-2 py-4">
-                    {formatPercentage(crypto.supplyChange1m)}
-                  </td>
-
                   <td className="px-2 py-4">
                     {formatCurrency(crypto.volume24h)}
                   </td>

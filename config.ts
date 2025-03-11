@@ -1,1 +1,1 @@
-export const server: string ="https://coin-server-eight.vercel.app/v1";
+export const server: string ="https://coin-server-blush.vercel.app/v1";
