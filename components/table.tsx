@@ -20,6 +20,7 @@ interface CryptoData {
   volume24h: number;
   marketCap: number;
   totalSupply: number;
+  supplyChange1d: number;
   supplyChange1w: number;
   supplyChange1m: number;
   supplyChange1y: number;
@@ -92,6 +93,7 @@ export default function CryptoTable() {
 
             return {
               ...coin,
+              supplyChange1d: calculateChange(supplyHistory['1d']?.totalSupply),
               supplyChange1w: calculateChange(supplyHistory['1w']?.totalSupply),
               supplyChange1m: calculateChange(supplyHistory['1m']?.totalSupply),
               supplyChange1y: calculateChange(supplyHistory['1y']?.totalSupply)
@@ -100,6 +102,7 @@ export default function CryptoTable() {
             console.error(`Error fetching supply history for ${coin.symbol}:`, error);
             return {
               ...coin,
+              supplyChange1d: 0,
               supplyChange1w: 0,
               supplyChange1m: 0,
               supplyChange1y: 0
@@ -167,6 +170,7 @@ export default function CryptoTable() {
                 <th className="px-6 py-3">#</th>
                 <th className="px-16 py-3">Coin</th>
                 <th className="px-8 py-3">Price</th>
+                <th className="px-4 py-3">Supply (1d)</th>
                 <th className="px-4 py-3">Supply (1w)</th>
                 <th className="px-4 py-3">Supply (1m)</th>
                 <th className="px-4 py-3">Supply (1y)</th>
@@ -196,6 +200,7 @@ export default function CryptoTable() {
                     </div>
                   </td>
                   <td className="px-6 py-4 font-medium">${formatNumber(crypto.price)}</td>
+                  <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1d)}</td>
                   <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1w)}</td>
                   <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1m)}</td>
                   <td className="px-4 py-4">{formatPercentage(crypto.supplyChange1y)}</td>
