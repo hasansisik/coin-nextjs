@@ -13,8 +13,8 @@ export default function Footer() {
   }, [dispatch])
 
   return (
-    <footer className="px-20 py-5 border-t">
-      <p className=" text-gray-500 text-center">
+    <footer className="px-4 md:px-20 py-5 border-t">
+      <p className="text-xs md:text-sm text-gray-500 text-center">
        {footer?.kvk.content}
       </p>
     </footer>

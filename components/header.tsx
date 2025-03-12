@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Bitcoin, LogOut, User } from "lucide-react";
+import { Bitcoin, LogOut, User, Menu } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { getFooterData } from "@/redux/actions/footerActions";
@@ -42,6 +42,7 @@ export default function Header() {
     eth: { price: 0, image: "" },
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const { footer } = useSelector((state: any) => state.footer);
   const { user } = useSelector((state: RootState) => state.user);
@@ -107,7 +108,7 @@ export default function Header() {
   };
 
   return (
-    <header className="flex items-center justify-between px-20 py-3 border-b">
+    <header className="relative flex items-center justify-between px-4 md:px-20 py-3 border-b">
       <div className="flex items-center space-x-5">
         <Link
           href="/dashboard"
@@ -117,14 +118,15 @@ export default function Header() {
           <span className="text-md font-bold">Kriptotek</span>
         </Link>
 
-        <nav className="hidden md:flex items-center space-x-4  bg-neutral-100 px-2 py-1 rounded-full">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-4 bg-neutral-100 px-2 py-1 rounded-full">
           {menuItems
             .filter(item => !item.adminOnly || user?.role === 'admin')
             .map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white "
+                className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white"
               >
                 {item.name}
               </Link>
@@ -132,6 +134,7 @@ export default function Header() {
         </nav>
       </div>
 
+      {/* Desktop Content */}
       <div className="hidden md:flex items-center space-x-4">
         <div className="flex items-center space-x-2 bg-neutral-100 px-6 py-3 rounded-full">
           {cryptoData.btc.image ? (
@@ -161,7 +164,7 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Social Media Icons */}
+      {/* Desktop Social Icons */}
       <div className="hidden md:flex items-center space-x-4">
         {footer?.socialMenu?.map((social: any) => (
           <div
@@ -194,39 +197,92 @@ export default function Header() {
         ))}
       </div>
 
-      {/* Icons */}
-      <div className="flex items-center space-x-3">
+      {/* User Section & Mobile Menu Button */}
+      <div className="flex items-center gap-3">
         {user?.name ? (
           <>
-            <div className="text-sm font-medium bg-neutral-100 px-4 py-3 rounded-full">
-              {user.name}
-            </div>
-            <Button 
-              className="rounded-full bg-neutral-100 group h-12 w-12" 
-              size="icon"
-              onClick={handleLogout}
-            >
-              <LogOut className="h-7 w-7 text-black group-hover:text-white" />
-            </Button>
-            {user.role === 'admin' && (
+            <div className="hidden md:flex items-center gap-3">
+              <div className="text-sm font-medium bg-neutral-100 px-4 py-3 rounded-full whitespace-nowrap">
+                {user.name}
+              </div>
               <Button 
-                className="rounded-full bg-neutral-100 group h-12 w-12" 
+                className="rounded-full bg-neutral-100 group h-12 w-12 flex-shrink-0" 
                 size="icon"
-                onClick={() => router.push("/dashboard/profile")}
+                onClick={handleLogout}
               >
-                <User className="h-7 w-7 text-black group-hover:text-white" />
+                <LogOut className="h-7 w-7 text-black group-hover:text-white" />
               </Button>
-            )}
+              {user.role === 'admin' && (
+                <Button 
+                  className="rounded-full bg-neutral-100 group h-12 w-12 flex-shrink-0" 
+                  size="icon"
+                  onClick={() => router.push("/dashboard/profile")}
+                >
+                  <User className="h-7 w-7 text-black group-hover:text-white" />
+                </Button>
+              )}
+            </div>
           </>
         ) : (
           <Button
-            className="rounded-full  hover:bg-primary px-6"
+            className="hidden md:flex rounded-full hover:bg-primary px-6"
             onClick={() => router.push("/")}
           >
             Giriş Yap
           </Button>
         )}
+        
+        {/* Mobile Menu Button */}
+        <Button
+          className="md:hidden rounded-full bg-neutral-100 text-black group h-12 w-12"
+          size="icon"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          <Menu className="h-6 w-6" />
+        </Button>
       </div>
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50">
+          {user?.name && (
+            <div className="px-4 py-2 border-b">
+              <div className="text-sm font-medium">{user.name}</div>
+            </div>
+          )}
+          {menuItems
+            .filter(item => !item.adminOnly || user?.role === 'admin')
+            .map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="block px-4 py-2 text-sm hover:bg-neutral-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                {item.name}
+              </Link>
+            ))}
+          {user?.name ? (
+            <button
+              onClick={() => {
+                handleLogout();
+                setIsMenuOpen(false);
+              }}
+              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100"
+            >
+              Çıkış Yap
+            </button>
+          ) : (
+            <Link
+              href="/"
+              className="block px-4 py-2 text-sm hover:bg-neutral-100"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Giriş Yap
+            </Link>
+          )}
+        </div>
+      )}
     </header>
   );
 }

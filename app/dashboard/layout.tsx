@@ -21,7 +21,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="flex-1 px-20 py-8">
+      <main className="flex-1 px-4 md:px-20 py-8">
         {children}
         <Toaster />
       </main>

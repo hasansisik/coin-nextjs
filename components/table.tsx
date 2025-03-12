@@ -290,9 +290,10 @@ export default function CryptoTable() {
             <p>Yükleniyor...</p>
           </div>
         ) : (
-          <table className="w-full border-collapse text-sm whitespace-nowrap">
-            <thead>
-              <tr className="text-left font-medium text-gray-800">
+          <div className="relative max-h-[550px] overflow-y-auto">
+            <table className="w-full border-collapse text-sm whitespace-nowrap">
+              <thead className="sticky -top-1 bg-white z-10">
+                <tr className="text-left font-medium text-gray-800">
                 <th className="px-2 py-2">#</th>
                 <th className="px-2 py-2">Coin</th>
                 <th className="px-2 py-2">Fiyat</th>
@@ -304,8 +305,8 @@ export default function CryptoTable() {
                 <th className="px-2 py-2">Toplam Arz</th>
                 <th className="px-2 py-2">Max Arz</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody>
               {currentTableData.map((crypto) => (
                 <tr
                   key={crypto.id}
@@ -351,8 +352,9 @@ export default function CryptoTable() {
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
