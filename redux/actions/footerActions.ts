@@ -2,20 +2,12 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import { server } from "@/config";
 
-export interface UpdateAboutUsPayload {
-  aboutUs: string;
-}
-
-export interface UpdateCopyrightPayload {
-  copyright: string;
-}
-
-export interface UpdateCookiePolicyPayload {
+export interface UpdateKvkPayload {
   title: string;
   content: string;
 }
 
-export interface UpdateKvkPayload {
+export interface UpdateInfoPayload {
   title: string;
   content: string;
 }
@@ -57,6 +49,30 @@ export const updateKvk = createAsyncThunk(
       };
       const { data } = await axios.put(
         `${server}/footer/kvk`,
+        payload,
+        config
+      );
+      return data;
+    } catch (error: any) {
+      return thunkAPI.rejectWithValue(error.response.data.message);
+    }
+  }
+);
+
+// Update Info
+export const updateInfo = createAsyncThunk(
+  "footer/updateInfo",
+  async (payload: UpdateInfoPayload, thunkAPI) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const { data } = await axios.put(
+        `${server}/footer/info`,
         payload,
         config
       );

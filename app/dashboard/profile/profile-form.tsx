@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu } from "@/redux/actions/footerActions";
+import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu, updateInfo } from "@/redux/actions/footerActions";
 import { clearError, clearSuccess } from "@/redux/reducers/footerReducer";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -31,6 +31,7 @@ export function ProfileForm() {
   );
 
   const [kvk, setKvk] = useState("");
+  const [info, setInfo] = useState("");
   const [socialMenu, setSocialMenu] = useState<any[]>([{ title: "", url: "" }]);
 
   useEffect(() => {
@@ -41,6 +42,9 @@ export function ProfileForm() {
     if (footer) {
       if (footer.kvk?.content) {
         setKvk(footer.kvk.content);
+      }
+      if (footer.info?.content) {
+        setInfo(footer.info.content);
       }
       if (footer.socialMenu) {
         setSocialMenu(footer.socialMenu);
@@ -72,6 +76,15 @@ export function ProfileForm() {
       updateKvk({
         title: "KVK Aydınlatma Metni",
         content: kvk,
+      })
+    );
+  };
+
+  const handleInfoUpdate = () => {
+    dispatch(
+      updateInfo({
+        title: "Information",
+        content: info,
       })
     );
   };
@@ -214,7 +227,7 @@ export function ProfileForm() {
               {/* Policies Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Politikalar</CardTitle>
+                  <CardTitle>KVKK</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>
@@ -227,6 +240,27 @@ export function ProfileForm() {
                     <div className="flex justify-end pt-4">
                       <Button onClick={handleKvkUpdate}>
                         KVK Metnini Güncelle
+                      </Button>
+                    </div>
+                  </>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <>
+                    <Textarea 
+                      value={info}
+                      onChange={(e) => setInfo(e.target.value)}
+                      placeholder="Bilgi metnini buraya giriniz"
+                      className="min-h-[200px]"
+                    />
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={handleInfoUpdate}>
+                        Bilgi Metnini Güncelle
                       </Button>
                     </div>
                   </>

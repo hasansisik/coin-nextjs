@@ -151,11 +151,13 @@ export default function CryptoTable() {
           };
 
           const calculateChange = (oldSupply: number | null) => {
-            if (!oldSupply || !currentSupply)
+            if (!oldSupply || !currentSupply) {
               return { change: null, supply: null };
+            }
+            const supplyDifference = currentSupply - oldSupply;
             return {
-              change: ((currentSupply - oldSupply) / oldSupply) * 100,
-              supply: oldSupply,
+              change: supplyDifference,
+              supply: oldSupply
             };
           };
 
@@ -190,14 +192,12 @@ export default function CryptoTable() {
         setIsLoading(true);
         let coinsData: CryptoData[] = [];
 
-        // Önce localStorage'dan veriyi al
         const cachedData = localStorage.getItem("cryptoData");
         if (cachedData) {
           coinsData = JSON.parse(cachedData);
           setCryptoData(coinsData);
         }
 
-        // CoinGecko'dan veri çekmeyi dene
         try {
           const newCoins = await fetchCoinGeckoData();
           if (newCoins && newCoins.length > 0) {
@@ -212,7 +212,6 @@ export default function CryptoTable() {
           localStorage.setItem("cryptoData", JSON.stringify(enhancedCoins));
         }
       } catch (error) {
-        // Herhangi bir hata durumunda en azından localStorage verilerini göster
         const cachedData = localStorage.getItem("cryptoData");
         if (cachedData) {
           setCryptoData(JSON.parse(cachedData));
@@ -250,35 +249,18 @@ export default function CryptoTable() {
       return <span className="text-gray-500">-</span>;
     }
 
-    const color =
-      value.change === 0
-        ? "text-gray-500"
-        : value.change < 0
-        ? "text-red-500"
-        : "text-green-500";
+    const color = value.change === 0
+      ? "text-gray-500"
+      : value.change < 0
+      ? "text-red-500"
+      : "text-green-500";
     const prefix = value.change === 0 ? "" : value.change < 0 ? "▼ " : "▲ ";
 
-    let formattedPercent;
-    if (Math.abs(value.change) > 1000) {
-      formattedPercent = `${Math.round(value.change)}`;
-    } else if (Math.abs(value.change) < 0.001) {
-      formattedPercent = "0.000";
-    } else if (Math.abs(value.change) < 1) {
-      formattedPercent = value.change.toFixed(3);
-    } else {
-      formattedPercent = value.change.toFixed(2);
-    }
-
     return (
-      <div className={`${color} flex flex-col`}>
-        <span>
-          {prefix}
-          {formattedPercent}%
-        </span>
-        <span className="text-sm opacity-75">
-          {value.supply ? formatCurrency(value.supply) : "-"}
-        </span>
-      </div>
+      <span className={color}>
+        {prefix}
+        {formatCurrency(Math.abs(value.change))}
+      </span>
     );
   };
 

@@ -1,9 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 import {
   getFooterData,
-
   updateKvk,
   updateSocialMenu,
+  updateInfo, // Add this import
 } from "../actions/footerActions";
 
 interface FooterState {
@@ -75,6 +75,22 @@ const footerSlice = createSlice({
         state.error = null;
       })
       .addCase(updateSocialMenu.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Update Info
+    builder
+      .addCase(updateInfo.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateInfo.fulfilled, (state, action) => {
+        state.loading = false;
+        state.footer = action.payload;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(updateInfo.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
