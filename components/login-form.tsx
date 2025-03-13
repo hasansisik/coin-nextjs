@@ -86,12 +86,7 @@ export function LoginForm({
           </div>
         </a>
         <h1 className="text-xl font-bold">Coin Market&apos;e Hoşgeldiniz</h1>
-        <div className="text-center text-sm">
-          Bir hesabın yok mu?{" "}
-          <a href="#" className="underline underline-offset-4" onClick={handleApplyClick}>
-            Başvur
-          </a>
-        </div>
+        
       </div>
       
       <form onSubmit={formik.handleSubmit} className="flex flex-col gap-6">
