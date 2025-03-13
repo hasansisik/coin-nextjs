@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Kriptotek",
-  description: "Kriptotek is a simple cryptocurrency tracker.",
+  description: "Kriptotek - Kripto piyasalarını takip edin",
 };
 
 export default function RootLayout({

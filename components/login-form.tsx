@@ -123,7 +123,7 @@ export function LoginForm({
             )}
           </div>
         )}
-        <Button type="submit" className="w-full">
+        <Button type="submit" className="w-full cursor-pointer hover:cursor-pointer">
           Giriş Yap
         </Button>
       </form>

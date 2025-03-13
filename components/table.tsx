@@ -259,7 +259,7 @@ export default function CryptoTable() {
     return (
       <span className={color}>
         {prefix}
-        {formatCurrency(Math.abs(value.change))}
+        {Math.abs(value.change).toLocaleString("en-US")}
       </span>
     );
   };
