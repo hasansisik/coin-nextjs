@@ -232,13 +232,12 @@ export default function CryptoTable() {
         currency: "USD",
         maximumFractionDigits: num >= 1 ? 2 : 4,
         minimumFractionDigits: num >= 1 ? 2 : 4,
-      })
-      .replace("$", "");
+      });
   };
 
-  const formatCurrency = (num: number | null): string => {
+  const formatCurrency = (num: number | null, includeSymbol: boolean = false): string => {
     if (num === null) return '∞';
-    return `$${num.toLocaleString("en-US")}`;
+    return `${includeSymbol ? '$' : ''}${num.toLocaleString("en-US")}`;
   };
 
   const formatPercentage = (value: {
@@ -309,7 +308,7 @@ export default function CryptoTable() {
                     </div>
                   </td>
                   <td className="px-2 py-4 font-medium">
-                    ${formatNumber(crypto.price)}
+                    {formatNumber(crypto.price)}
                   </td>
                   <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1d)}
@@ -318,10 +317,10 @@ export default function CryptoTable() {
                     {formatPercentage(crypto.supplyChange1w)}
                   </td>
                   <td className="px-2 py-4">
-                    {formatCurrency(crypto.volume24h)}
+                    {formatCurrency(crypto.volume24h, true)}
                   </td>
                   <td className="px-2 py-4">
-                    {formatCurrency(crypto.marketCap)}
+                    {formatCurrency(crypto.marketCap, true)}
                   </td>
                   <td className="px-2 py-4">
                     {formatCurrency(crypto.circulatingSupply)}
