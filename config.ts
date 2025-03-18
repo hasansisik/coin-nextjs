@@ -1,1 +1,1 @@
-export const server: string ="https://coin-server-three.vercel.app/v1";
+export const server: string ="https://coinmarket-server-ba706db69da7.herokuapp.com/v1";
