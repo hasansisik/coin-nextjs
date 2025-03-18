@@ -3,7 +3,8 @@ import {
   getFooterData,
   updateKvk,
   updateSocialMenu,
-  updateInfo, // Add this import
+  updateInfo,
+  updateLogin, // Add this import
 } from "../actions/footerActions";
 
 interface FooterState {
@@ -91,6 +92,22 @@ const footerSlice = createSlice({
         state.error = null;
       })
       .addCase(updateInfo.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      });
+
+    // Update Login
+    builder
+      .addCase(updateLogin.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updateLogin.fulfilled, (state, action) => {
+        state.loading = false;
+        state.footer = action.payload;
+        state.success = true;
+        state.error = null;
+      })
+      .addCase(updateLogin.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });

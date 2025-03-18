@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch } from "@/redux/store";
-import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu, updateInfo } from "@/redux/actions/footerActions";
+import { deleteSocialMenuItem, getFooterData, updateKvk, updateSocialMenu, updateInfo, updateLogin } from "@/redux/actions/footerActions";
 import { clearError, clearSuccess } from "@/redux/reducers/footerReducer";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -33,6 +33,7 @@ export function ProfileForm() {
   const [kvk, setKvk] = useState("");
   const [info, setInfo] = useState("");
   const [socialMenu, setSocialMenu] = useState<any[]>([{ title: "", url: "" }]);
+  const [login, setLogin] = useState("");
 
   useEffect(() => {
     dispatch(getFooterData());
@@ -48,6 +49,9 @@ export function ProfileForm() {
       }
       if (footer.socialMenu) {
         setSocialMenu(footer.socialMenu);
+      }
+      if (footer.login?.content) {
+        setLogin(footer.login.content);
       }
     }
   }, [footer]);
@@ -114,6 +118,10 @@ export function ProfileForm() {
 
   const handleSocialMenuUpdate = () => {
     dispatch(updateSocialMenu(socialMenu));
+  };
+
+  const handleLoginUpdate = () => {
+    dispatch(updateLogin(login));
   };
 
   return (
@@ -224,10 +232,32 @@ export function ProfileForm() {
         {({ isSubmitting }) => (
           <FormikForm className="space-y-8">
             <div className="grid gap-8">
+              {/* Login Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Giriş Ekranı Başlığı</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <>
+                    <Textarea 
+                      value={login}
+                      onChange={(e) => setLogin(e.target.value)}
+                      placeholder="Login bilgisini buraya giriniz"
+                      className="min-h-[200px]"
+                    />
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={handleLoginUpdate}>
+                        Login Bilgisini Güncelle
+                      </Button>
+                    </div>
+                  </>
+                </CardContent>
+              </Card>
+
               {/* Policies Section */}
               <Card>
                 <CardHeader>
-                  <CardTitle>KVKK</CardTitle>
+                  <CardTitle>Footer KVKK</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>
@@ -248,7 +278,7 @@ export function ProfileForm() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle>Information</CardTitle>
+                  <CardTitle>Footer Info</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>

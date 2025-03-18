@@ -127,3 +127,22 @@ export const deleteSocialMenuItem = createAsyncThunk(
     }
   }
 );
+
+export const updateLogin = createAsyncThunk(
+  "footer/updateLogin",
+  async (content: string, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("accessToken");
+      const config = {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      };
+      const { data } = await axios.put(`${server}/footer/login`, { content } , config);
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "An error occurred");
+    }
+  }
+);

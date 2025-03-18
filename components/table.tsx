@@ -43,7 +43,7 @@ export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100; // 100'den 500'e değiştirildi
+  const itemsPerPage = 100; 
 
   const currentTableData = cryptoData.slice(
     (currentPage - 1) * itemsPerPage,
