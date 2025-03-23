@@ -43,7 +43,7 @@ export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100; 
+  const itemsPerPage = 25; // Sayfa başına daha az coin göster
 
   const currentTableData = cryptoData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -55,38 +55,52 @@ export default function CryptoTable() {
   useEffect(() => {
     const fetchCoinGeckoData = async () => {
       try {
-        const pages = [1, 2, 3, 4, 5];
-        const promises = pages.map((page) =>
-          axios.get("https://api.coingecko.com/api/v3/coins/markets", {
-            params: {
-              vs_currency: "usd",
-              order: "market_cap_desc",
-              per_page: 100,
-              page: page,
-              sparkline: false,
-            },
-          })
-        );
+        // Önce localStorage'dan veriyi kontrol et
+        const cachedData = localStorage.getItem("cryptoData");
+        const cacheTime = localStorage.getItem("cryptoDataTime");
+        const now = Date.now();
+        
+        // Cache 5 dakikadan yeni ise kullan
+        if (cachedData && cacheTime && (now - Number(cacheTime)) < 5 * 60 * 1000) {
+          return JSON.parse(cachedData);
+        }
 
-        const responses = await Promise.all(promises);
-        return responses.flatMap((response, pageIndex) =>
-          response.data.map((coin: any, index: number) => ({
-            id: pageIndex * 100 + index + 1,
-            name: coin.name,
-            symbol: coin.symbol.toUpperCase(),
-            icon: coin.image,
-            price: coin.current_price,
-            volume24h: coin.total_volume,
-            marketCap: coin.market_cap,
-            circulatingSupply: coin.circulating_supply || 0,
-            totalSupply: coin.total_supply || 0,
-            maxSupply: coin.max_supply,
-            supplyChange1d: { change: 0, supply: 0 },
-            supplyChange1w: { change: 0, supply: 0 },
-          }))
-        );
+        const response = await axios.get(`${server}/coingecko/markets`, {
+          params: {
+            vs_currency: "usd",
+            order: "market_cap_desc",
+            per_page: 100,
+            page: 1,
+            sparkline: false,
+          },
+          timeout: 10000, // 10 saniye timeout
+        });
+
+        const coins = response.data.map((coin: any, index: number) => ({
+          id: index + 1,
+          name: coin.name,
+          symbol: coin.symbol.toUpperCase(),
+          icon: coin.image,
+          price: coin.current_price,
+          volume24h: coin.total_volume,
+          marketCap: coin.market_cap,
+          circulatingSupply: coin.circulating_supply || 0,
+          totalSupply: coin.total_supply || 0,
+          maxSupply: coin.max_supply,
+          supplyChange1d: { change: 0, supply: 0 },
+          supplyChange1w: { change: 0, supply: 0 },
+        }));
+
+        // Cache'i güncelle
+        localStorage.setItem("cryptoData", JSON.stringify(coins));
+        localStorage.setItem("cryptoDataTime", String(now));
+
+        return coins;
       } catch (error) {
-        return [];
+        console.error('Error fetching data:', error);
+        // Hata durumunda cache'den veriyi göster
+        const cachedData = localStorage.getItem("cryptoData");
+        return cachedData ? JSON.parse(cachedData) : [];
       }
     };
 
@@ -190,28 +204,15 @@ export default function CryptoTable() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        let coinsData: CryptoData[] = [];
-
-        const cachedData = localStorage.getItem("cryptoData");
-        if (cachedData) {
-          coinsData = JSON.parse(cachedData);
-          setCryptoData(coinsData);
-        }
-
-        try {
-          const newCoins = await fetchCoinGeckoData();
-          if (newCoins && newCoins.length > 0) {
-            coinsData = newCoins;
-          }
-        } catch (error) {
-        }
-
-        if (coinsData.length > 0) {
-          const enhancedCoins = await fetchSupplyHistory(coinsData);
+        const coins = await fetchCoinGeckoData();
+        
+        if (coins.length > 0) {
+          const enhancedCoins = await fetchSupplyHistory(coins);
           setCryptoData(enhancedCoins);
-          localStorage.setItem("cryptoData", JSON.stringify(enhancedCoins));
         }
       } catch (error) {
+        console.error('Error:', error);
+        // Herhangi bir hata durumunda cache'den veriyi göster
         const cachedData = localStorage.getItem("cryptoData");
         if (cachedData) {
           setCryptoData(JSON.parse(cachedData));
@@ -222,6 +223,10 @@ export default function CryptoTable() {
     };
 
     fetchData();
+    
+    // 5 dakikada bir otomatik yenile
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // Format numbers to display like in the image
