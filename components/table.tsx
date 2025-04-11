@@ -44,21 +44,20 @@ export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 25; // Sayfa başına daha az coin göster
-
-  const currentTableData = cryptoData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(cryptoData.length / itemsPerPage);
+  const itemsPerPage = 100; // 100 coin göster
+  const totalItems = 500; // Toplam 500 coin
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   useEffect(() => {
-    const fetchCoinGeckoData = async () => {
+    const fetchCoinGeckoData = async (page: number) => {
       try {
+        // Cache key'i sayfa numarasına göre oluştur
+        const cacheKey = `cryptoData_page_${page}`;
+        const cacheTimeKey = `cryptoDataTime_page_${page}`;
+        
         // Önce localStorage'dan veriyi kontrol et
-        const cachedData = localStorage.getItem("cryptoData");
-        const cacheTime = localStorage.getItem("cryptoDataTime");
+        const cachedData = localStorage.getItem(cacheKey);
+        const cacheTime = localStorage.getItem(cacheTimeKey);
         const now = Date.now();
         
         // Cache 5 dakikadan yeni ise kullan
@@ -70,15 +69,16 @@ export default function CryptoTable() {
           params: {
             vs_currency: "usd",
             order: "market_cap_desc",
-            per_page: 100,
-            page: 1,
+            per_page: itemsPerPage,
+            page: page,
             sparkline: false,
           },
           timeout: 10000, // 10 saniye timeout
         });
 
+        const startIndex = (page - 1) * itemsPerPage + 1;
         const coins = response.data.map((coin: any, index: number) => ({
-          id: index + 1,
+          id: startIndex + index,
           name: coin.name,
           symbol: coin.symbol.toUpperCase(),
           icon: coin.image,
@@ -94,14 +94,15 @@ export default function CryptoTable() {
         }));
 
         // Cache'i güncelle
-        localStorage.setItem("cryptoData", JSON.stringify(coins));
-        localStorage.setItem("cryptoDataTime", String(now));
+        localStorage.setItem(cacheKey, JSON.stringify(coins));
+        localStorage.setItem(cacheTimeKey, String(now));
 
         return coins;
       } catch (error) {
         console.error('Error fetching data:', error);
         // Hata durumunda cache'den veriyi göster
-        const cachedData = localStorage.getItem("cryptoData");
+        const cacheKey = `cryptoData_page_${page}`;
+        const cachedData = localStorage.getItem(cacheKey);
         return cachedData ? JSON.parse(cachedData) : [];
       }
     };
@@ -194,7 +195,6 @@ export default function CryptoTable() {
             supplyChange1m: monthSupply
               ? calculateChange(monthSupply.circulatingSupply)
               : { change: null, supply: null },
-
           };
         });
       } catch (error) {
@@ -205,7 +205,7 @@ export default function CryptoTable() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const coins = await fetchCoinGeckoData();
+        const coins = await fetchCoinGeckoData(currentPage);
         
         if (coins.length > 0) {
           const enhancedCoins = await fetchSupplyHistory(coins);
@@ -214,7 +214,8 @@ export default function CryptoTable() {
       } catch (error) {
         console.error('Error:', error);
         // Herhangi bir hata durumunda cache'den veriyi göster
-        const cachedData = localStorage.getItem("cryptoData");
+        const cacheKey = `cryptoData_page_${currentPage}`;
+        const cachedData = localStorage.getItem(cacheKey);
         if (cachedData) {
           setCryptoData(JSON.parse(cachedData));
         }
@@ -228,7 +229,7 @@ export default function CryptoTable() {
     // 5 dakikada bir otomatik yenile
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentPage]); // currentPage değiştiğinde yeniden fetch yap
 
   // Format numbers to display like in the image
   const formatNumber = (num: number): string => {
@@ -295,7 +296,7 @@ export default function CryptoTable() {
               </tr>
               </thead>
               <tbody>
-              {currentTableData.map((crypto) => (
+              {cryptoData.map((crypto) => (
                 <tr
                   key={crypto.id}
                   className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
@@ -363,7 +364,7 @@ export default function CryptoTable() {
           </PaginationItem>
 
           {[...Array(totalPages)].map((_, i) => (
-            <PaginationItem key={i + 1}>
+            <PaginationItem key={i + 1} className={i > 4 ? "hidden sm:flex" : ""}>
               <PaginationLink
                 onClick={() => setCurrentPage(i + 1)}
                 isActive={currentPage === i + 1}
