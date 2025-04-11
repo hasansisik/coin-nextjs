@@ -24,6 +24,7 @@ interface CryptoData {
   maxSupply: number | null;
   supplyChange1d: { change: number | null; supply: number | null };
   supplyChange1w: { change: number | null; supply: number | null };
+  supplyChange1m: { change: number | null; supply: number | null };
 }
 
 interface SupplyData {
@@ -89,6 +90,7 @@ export default function CryptoTable() {
           maxSupply: coin.max_supply,
           supplyChange1d: { change: 0, supply: 0 },
           supplyChange1w: { change: 0, supply: 0 },
+          supplyChange1m: { change: 0, supply: 0 },
         }));
 
         // Cache'i güncelle
@@ -129,6 +131,7 @@ export default function CryptoTable() {
               ...coin,
               supplyChange1d: { change: null, supply: null },
               supplyChange1w: { change: null, supply: null },
+              supplyChange1m: { change: null, supply: null },
             };
           }
 
@@ -191,9 +194,7 @@ export default function CryptoTable() {
             supplyChange1m: monthSupply
               ? calculateChange(monthSupply.circulatingSupply)
               : { change: null, supply: null },
-            supplyChange1y: yearSupply
-              ? calculateChange(yearSupply.circulatingSupply)
-              : { change: null, supply: null },
+
           };
         });
       } catch (error) {
@@ -285,6 +286,7 @@ export default function CryptoTable() {
                 <th className="px-2 py-2">Fiyat</th>
                 <th className="px-2 py-2">Dolaşımdaki Arz (1g)</th>
                 <th className="px-2 py-2">Dolaşımdaki Arz (1h)</th>
+                <th className="px-2 py-2">Dolaşımdaki Arz (1a)</th>
                 <th className="px-2 py-2">24s Hacim</th>
                 <th className="px-2 py-2">Market Değeri</th>
                 <th className="px-2 py-2">Dolaşım Arzı</th>
@@ -320,6 +322,9 @@ export default function CryptoTable() {
                   </td>
                   <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1w)}
+                  </td>
+                  <td className="px-2 py-4">
+                    {formatPercentage(crypto.supplyChange1m)}
                   </td>
                   <td className="px-2 py-4 dark:text-gray-300">
                     {formatCurrency(crypto.volume24h, true)}
