@@ -1,5 +1,5 @@
 "use client";
-import { Bitcoin, GalleryVerticalEnd } from "lucide-react";
+import { Bitcoin } from "lucide-react";
 import { useFormik } from "formik";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";

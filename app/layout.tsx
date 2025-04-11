@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "../redux/provider";
 import { Toaster } from "@/components/ui/toaster";
+import { LightDarkToggle } from "@/components/ui/ight-dark-toggle";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,8 @@ export default function RootLayout({
         <Providers>
           {children} <Toaster />
         </Providers>
+        <LightDarkToggle className="fixed top-[calc(50%-12px)] right-2"/>
+
       </body>
     </html>
   );
