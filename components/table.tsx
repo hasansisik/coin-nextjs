@@ -250,14 +250,14 @@ export default function CryptoTable() {
     supply: number | null;
   }): React.ReactElement => {
     if (value.change === null || isNaN(value.change)) {
-      return <span className="text-gray-500">-</span>;
+      return <span className="text-gray-500 dark:text-gray-400">-</span>;
     }
 
     const color = value.change === 0
-      ? "text-gray-500"
+      ? "text-gray-500 dark:text-gray-400"
       : value.change < 0
-      ? "text-red-500"
-      : "text-green-500";
+      ? "text-red-500 dark:text-red-400"
+      : "text-green-500 dark:text-green-400";
     const prefix = value.change === 0 ? "" : value.change < 0 ? "▼ " : "▲ ";
 
     return (
@@ -273,13 +273,13 @@ export default function CryptoTable() {
       <div className="w-full overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <p>Yükleniyor...</p>
+            <p className="dark:text-white">Yükleniyor...</p>
           </div>
         ) : (
           <div className="relative max-h-[550px] overflow-y-auto">
             <table className="w-full border-collapse text-sm whitespace-nowrap">
-              <thead className="sticky -top-1 bg-white z-10">
-                <tr className="text-left font-medium text-gray-800">
+              <thead className="sticky -top-1 bg-white dark:bg-gray-800 z-10">
+                <tr className="text-left font-medium text-gray-800 dark:text-gray-200">
                 <th className="px-2 py-2">#</th>
                 <th className="px-2 py-2">Coin</th>
                 <th className="px-2 py-2">Fiyat</th>
@@ -296,9 +296,9 @@ export default function CryptoTable() {
               {currentTableData.map((crypto) => (
                 <tr
                   key={crypto.id}
-                  className="border-t border-gray-200 hover:bg-gray-50"
+                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                 >
-                  <td className="px-2 py-3 font-bold">{crypto.id}</td>
+                  <td className="px-2 py-3 font-bold dark:text-white">{crypto.id}</td>
                   <td className="px-2 py-3 max-w-[250px]">
                     <div className="flex items-center gap-2">
                       <img
@@ -307,12 +307,12 @@ export default function CryptoTable() {
                         className="h-8 w-8 rounded-full flex-shrink-0"
                       />
                       <div className="flex items-center gap-1 min-w-0">
-                        <span className="font-medium truncate">{crypto.name}</span>
-                        <span className="text-gray-500 text-xs flex-shrink-0">{crypto.symbol}</span>
+                        <span className="font-medium truncate dark:text-white">{crypto.name}</span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{crypto.symbol}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="px-2 py-4 font-medium">
+                  <td className="px-2 py-4 font-medium dark:text-white">
                     {formatNumber(crypto.price)}
                   </td>
                   <td className="px-2 py-4">
@@ -321,19 +321,19 @@ export default function CryptoTable() {
                   <td className="px-2 py-4">
                     {formatPercentage(crypto.supplyChange1w)}
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 dark:text-gray-300">
                     {formatCurrency(crypto.volume24h, true)}
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 dark:text-gray-300">
                     {formatCurrency(crypto.marketCap, true)}
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 dark:text-gray-300">
                     {formatCurrency(crypto.circulatingSupply)}
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 dark:text-gray-300">
                     {formatCurrency(crypto.totalSupply)}
                   </td>
-                  <td className="px-2 py-4">
+                  <td className="px-2 py-4 dark:text-gray-300">
                     {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
                   </td>
                 </tr>

@@ -26,7 +26,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const storedTheme = localStorage.getItem('theme');
+                if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+                  document.documentElement.classList.add('dark');
+                }
+              })()
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -34,7 +49,6 @@ export default function RootLayout({
           {children} <Toaster />
         </Providers>
         <LightDarkToggle className="fixed top-[calc(50%-12px)] right-2"/>
-
       </body>
     </html>
   );

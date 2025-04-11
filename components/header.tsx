@@ -108,25 +108,25 @@ export default function Header() {
   };
 
   return (
-    <header className="relative flex items-center justify-between px-4 md:px-20 py-3 border-b">
+    <header className="relative flex items-center justify-between px-4 md:px-20 py-3 border-b dark:border-gray-800">
       <div className="flex items-center space-x-5">
         <Link
           href="/dashboard"
-          className="flex items-center space-x-2 bg-neutral-100 px-10 py-2 rounded-full"
+          className="flex items-center space-x-2 bg-neutral-100 dark:bg-gray-800 px-10 py-2 rounded-full"
         >
           <Bitcoin className="h-7 w-7 text-primary" />
-          <span className="text-md font-bold">Kriptotek</span>
+          <span className="text-md font-bold dark:text-white">Kriptotek</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-4 bg-neutral-100 px-2 py-1 rounded-full">
+        <nav className="hidden md:flex items-center space-x-4 bg-neutral-100 dark:bg-gray-800 px-2 py-1 rounded-full">
           {menuItems
             .filter(item => !item.adminOnly || user?.role === 'admin')
             .map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
-                className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white"
+                className="text-sm px-4 py-2 transition-colors rounded-full hover:bg-white dark:hover:bg-gray-700 dark:text-gray-200"
               >
                 {item.name}
               </Link>
@@ -136,17 +136,17 @@ export default function Header() {
 
       {/* Desktop Content */}
       <div className="hidden md:flex items-center space-x-4">
-        <div className="flex items-center space-x-2 bg-neutral-100 px-6 py-3 rounded-full">
+        <div className="flex items-center space-x-2 bg-neutral-100 dark:bg-gray-800 px-6 py-3 rounded-full">
           {cryptoData.btc.image ? (
             <img src={cryptoData.btc.image} alt="BTC" className="h-5 w-5" />
           ) : (
             <Bitcoin className="h-5 w-5 text-orange-500" />
           )}
-          <div className="text-sm font-bold ">
+          <div className="text-sm font-bold dark:text-white">
             {isLoading ? "..." : `$${cryptoData.btc.price.toLocaleString()}`}
           </div>
         </div>
-        <div className="flex items-center space-x-2 bg-neutral-100 px-6 py-3 rounded-full">
+        <div className="flex items-center space-x-2 bg-neutral-100 dark:bg-gray-800 px-6 py-3 rounded-full">
           {cryptoData.eth.image ? (
             <img src={cryptoData.eth.image} alt="ETH" className="h-5 w-5" />
           ) : (
@@ -158,7 +158,7 @@ export default function Header() {
               <path d="M11.944 17.97L4.58 13.62 11.943 24l7.37-10.38-7.372 4.35h.003zM12.056 0L4.69 12.223l7.365 4.354 7.365-4.35L12.056 0z" />
             </svg>
           )}
-          <div className="text-sm font-bold">
+          <div className="text-sm font-bold dark:text-white">
             {isLoading ? "..." : `$${cryptoData.eth.price.toLocaleString()}`}
           </div>
         </div>
@@ -170,7 +170,7 @@ export default function Header() {
           <div
             key={social._id}
             onClick={() => handleSocialClick(social.url)}
-            className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors cursor-pointer"
+            className="flex items-center space-x-2 px-4 py-3 rounded-full bg-neutral-100 dark:bg-gray-800 hover:bg-neutral-200 dark:hover:bg-gray-700 transition-colors cursor-pointer"
           >
             {social.title === "Telegram" && (
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="#229ED9">
@@ -192,7 +192,7 @@ export default function Header() {
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
               </svg>
             )}
-            <span className="text-sm text-gray-700">{social.title}</span>
+            <span className="text-sm text-gray-700 dark:text-gray-300">{social.title}</span>
           </div>
         ))}
       </div>
@@ -202,23 +202,23 @@ export default function Header() {
         {user?.name ? (
           <>
             <div className="hidden md:flex items-center gap-3">
-              <div className="text-sm font-medium bg-neutral-100 px-4 py-3 rounded-full whitespace-nowrap">
+              <div className="text-sm font-medium bg-neutral-100 dark:bg-gray-800 dark:text-white px-4 py-3 rounded-full whitespace-nowrap">
                 {user.name}
               </div>
               <Button 
-                className="rounded-full bg-neutral-100 group h-12 w-12 flex-shrink-0" 
+                className="rounded-full bg-neutral-100 dark:bg-gray-800 group h-12 w-12 flex-shrink-0" 
                 size="icon"
                 onClick={handleLogout}
               >
-                <LogOut className="h-7 w-7 text-black group-hover:text-white" />
+                <LogOut className="h-7 w-7 text-black dark:text-white group-hover:text-white" />
               </Button>
               {user.role === 'admin' && (
                 <Button 
-                  className="rounded-full bg-neutral-100 group h-12 w-12 flex-shrink-0" 
+                  className="rounded-full bg-neutral-100 dark:bg-gray-800 group h-12 w-12 flex-shrink-0" 
                   size="icon"
                   onClick={() => router.push("/dashboard/profile")}
                 >
-                  <User className="h-7 w-7 text-black group-hover:text-white" />
+                  <User className="h-7 w-7 text-black dark:text-white group-hover:text-white" />
                 </Button>
               )}
             </div>
@@ -234,7 +234,7 @@ export default function Header() {
         
         {/* Mobile Menu Button */}
         <Button
-          className="md:hidden rounded-full bg-neutral-100 text-black group h-12 w-12"
+          className="md:hidden rounded-full bg-neutral-100 dark:bg-gray-800 text-black dark:text-white group h-12 w-12"
           size="icon"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
@@ -244,10 +244,10 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50">
+        <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50">
           {user?.name && (
-            <div className="px-4 py-2 border-b">
-              <div className="text-sm font-medium">{user.name}</div>
+            <div className="px-4 py-2 border-b dark:border-gray-700">
+              <div className="text-sm font-medium dark:text-white">{user.name}</div>
             </div>
           )}
           {menuItems
@@ -256,7 +256,7 @@ export default function Header() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="block px-4 py-2 text-sm hover:bg-neutral-100"
+                className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-gray-700 dark:text-gray-200"
                 onClick={() => setIsMenuOpen(false)}
               >
                 {item.name}
@@ -268,14 +268,14 @@ export default function Header() {
                 handleLogout();
                 setIsMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-neutral-100"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-neutral-100 dark:hover:bg-gray-700"
             >
               Çıkış Yap
             </button>
           ) : (
             <Link
               href="/"
-              className="block px-4 py-2 text-sm hover:bg-neutral-100"
+              className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-gray-700 dark:text-gray-200"
               onClick={() => setIsMenuOpen(false)}
             >
               Giriş Yap
