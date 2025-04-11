@@ -48,7 +48,7 @@ export default function RootLayout({
         <Providers>
           {children} <Toaster />
         </Providers>
-        <LightDarkToggle className="fixed top-[calc(50%-12px)] right-2"/>
+        <LightDarkToggle className="fixed top-[calc(50%-12px)] right-2 hidden md:block"/>
       </body>
     </html>
   );

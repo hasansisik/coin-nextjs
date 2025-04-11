@@ -9,6 +9,7 @@ import { AppDispatch, RootState } from "@/redux/store";
 import { getFooterData } from "@/redux/actions/footerActions";
 import { getAllUsers, logout } from "@/redux/actions/userActions";
 import { useToast } from "@/components/ui/use-toast";
+import { LightDarkToggle } from "@/components/ui/ight-dark-toggle";
 
 const menuItems = [
   { name: "Anasayfa", href: "/dashboard" },
@@ -231,6 +232,11 @@ export default function Header() {
             Giriş Yap
           </Button>
         )}
+        
+        {/* Mobile Theme Toggle */}
+        <div className="md:hidden">
+          <LightDarkToggle className="h-12 w-12 flex items-center justify-center rounded-full bg-neutral-100 dark:bg-gray-800" />
+        </div>
         
         {/* Mobile Menu Button */}
         <Button
