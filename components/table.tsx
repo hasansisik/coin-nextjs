@@ -10,6 +10,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { server } from "@/config";
+import { Bitcoin } from "lucide-react";
 
 interface CryptoData {
   id: number;
@@ -274,14 +275,19 @@ export default function CryptoTable() {
     <div className="w-full space-y-4">
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <p className="dark:text-white">Yükleniyor...</p>
+          <div className="bitcoin-loader">
+            <div className="bitcoin-wrapper">
+              <Bitcoin size={48} className="bitcoin-icon" />
+            </div>
+            <div className="loader-text">Yükleniyor</div>
+          </div>
         </div>
       ) : (
-        <div className="border rounded-lg shadow-sm overflow-hidden dark:border-gray-800">
-          <div className="w-full overflow-x-auto custom-scrollbar">
-            <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar">
+        <div className="border rounded-lg shadow-sm overflow-hidden dark:border-gray-800 md:border-0 md:shadow-none">
+          <div className="w-full overflow-x-auto custom-scrollbar md:overflow-visible">
+            <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar md:overflow-visible md:max-h-none">
               <table className="w-full border-collapse text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
+                <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 md:static">
                   <tr className="text-left font-medium text-gray-800 dark:text-gray-200 border-b dark:border-gray-700">
                     <th className="px-4 py-3 whitespace-nowrap">#</th>
                     <th className="px-4 py-3 whitespace-nowrap">Coin</th>
@@ -353,29 +359,141 @@ export default function CryptoTable() {
       )}
 
       <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
+        /* Mobile scrollbar styles (hidden on desktop) */
+        @media (max-width: 768px) {
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 0, 0, 0.3);
+          }
+          .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+          }
+          .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+          }
+          .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+          }
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(0, 0, 0, 0.05);
-          border-radius: 8px;
+        
+        /* Hide scrollbar on desktop */
+        @media (min-width: 769px) {
+          .custom-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(0, 0, 0, 0.2);
-          border-radius: 8px;
+
+        /* Bitcoin advanced loader animation */
+        .bitcoin-loader {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 15px;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(0, 0, 0, 0.3);
+        
+        .bitcoin-wrapper {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          display: flex;
+          justify-content: center;
+          align-items: center;
         }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.05);
+        
+        .bitcoin-wrapper::before {
+          content: '';
+          position: absolute;
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: rgba(247, 147, 26, 0.15);
+          animation: pulse 2s ease-in-out infinite;
         }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.2);
+        
+        .bitcoin-wrapper::after {
+          content: '';
+          position: absolute;
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          border: 2px solid rgba(247, 147, 26, 0.5);
+          border-top-color: #f7931a;
+          animation: spin 1.5s linear infinite;
         }
-        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.3);
+        
+        .bitcoin-icon {
+          color: #f7931a;
+          animation: bounce 2s ease infinite;
+          z-index: 2;
+          filter: drop-shadow(0 0 10px rgba(247, 147, 26, 0.7));
+        }
+        
+        .loader-text {
+          color: #f7931a;
+          font-weight: 600;
+          font-size: 16px;
+          position: relative;
+          display: inline-block;
+        }
+        
+        .loader-text::after {
+          content: '...';
+          position: absolute;
+          animation: dots 1.5s steps(4, end) infinite;
+          width: 24px;
+          overflow: hidden;
+        }
+        
+        @keyframes bounce {
+          0%, 100% {
+            transform: translateY(0) scale(0.9);
+          }
+          50% {
+            transform: translateY(-10px) scale(1.1);
+          }
+        }
+        
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+        
+        @keyframes pulse {
+          0%, 100% {
+            transform: scale(0.8);
+            opacity: 0.3;
+          }
+          50% {
+            transform: scale(1.2);
+            opacity: 0.7;
+          }
+        }
+        
+        @keyframes dots {
+          0% { content: ''; }
+          25% { content: '.'; }
+          50% { content: '..'; }
+          75% { content: '...'; }
+          100% { content: ''; }
+        }
+        
+        .dark .loader-text {
+          color: #ffb74d;
         }
       `}</style>
 

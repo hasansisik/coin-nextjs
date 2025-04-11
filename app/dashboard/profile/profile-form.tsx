@@ -233,9 +233,9 @@ export function ProfileForm() {
           <FormikForm className="space-y-8">
             <div className="grid gap-8">
               {/* Login Section */}
-              <Card>
+              <Card className="dark:bg-gray-900 dark:border-gray-800">
                 <CardHeader>
-                  <CardTitle>Giriş Ekranı Başlığı</CardTitle>
+                  <CardTitle className="dark:text-white">Giriş Ekranı Başlığı</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>
@@ -243,10 +243,10 @@ export function ProfileForm() {
                       value={login}
                       onChange={(e) => setLogin(e.target.value)}
                       placeholder="Login bilgisini buraya giriniz"
-                      className="min-h-[200px]"
+                      className="min-h-[200px] dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400"
                     />
                     <div className="flex justify-end pt-4">
-                      <Button onClick={handleLoginUpdate}>
+                      <Button onClick={handleLoginUpdate} className="dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                         Login Bilgisini Güncelle
                       </Button>
                     </div>
@@ -254,10 +254,10 @@ export function ProfileForm() {
                 </CardContent>
               </Card>
 
-              {/* Policies Section */}
-              <Card>
+              {/* KVK Section */}
+              <Card className="dark:bg-gray-900 dark:border-gray-800">
                 <CardHeader>
-                  <CardTitle>Footer KVKK</CardTitle>
+                  <CardTitle className="dark:text-white">KVK Aydınlatma Metni</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>
@@ -265,10 +265,10 @@ export function ProfileForm() {
                       value={kvk}
                       onChange={(e) => setKvk(e.target.value)}
                       placeholder="KVK metnini buraya giriniz"
-                      className="min-h-[200px]"
+                      className="min-h-[200px] dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400"
                     />
                     <div className="flex justify-end pt-4">
-                      <Button onClick={handleKvkUpdate}>
+                      <Button onClick={handleKvkUpdate} className="dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
                         KVK Metnini Güncelle
                       </Button>
                     </div>
@@ -276,72 +276,80 @@ export function ProfileForm() {
                 </CardContent>
               </Card>
 
-              <Card>
+              {/* Info Section */}
+              <Card className="dark:bg-gray-900 dark:border-gray-800">
                 <CardHeader>
-                  <CardTitle>Footer Info</CardTitle>
+                  <CardTitle className="dark:text-white">Bilgilendirme Metni</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <>
                     <Textarea 
                       value={info}
                       onChange={(e) => setInfo(e.target.value)}
-                      placeholder="Bilgi metnini buraya giriniz"
-                      className="min-h-[200px]"
+                      placeholder="Bilgilendirme metnini buraya giriniz"
+                      className="min-h-[200px] dark:bg-gray-800 dark:border-gray-700 dark:text-white dark:placeholder:text-gray-400"
                     />
                     <div className="flex justify-end pt-4">
-                      <Button onClick={handleInfoUpdate}>
-                        Bilgi Metnini Güncelle
+                      <Button onClick={handleInfoUpdate} className="dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700">
+                        Bilgilendirme Metnini Güncelle
                       </Button>
                     </div>
                   </>
                 </CardContent>
               </Card>
 
-              <Separator />
-
               {/* Social Menu Section */}
-              <Card>
+              <Card className="dark:bg-gray-900 dark:border-gray-800">
                 <CardHeader>
-                  <CardTitle>Sosyal Menü</CardTitle>
+                  <CardTitle className="dark:text-white">Sosyal Medya Menüsü</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {socialMenu.map((item, index) => (
-                    <div key={index} className="space-y-2">
-                      <Label htmlFor={`socialMenu-title-${index}`}>
-                        Başlık
-                      </Label>
-                      <Input
-                        id={`socialMenu-title-${index}`}
-                        value={item.title}
-                        onChange={(e) =>
-                          handleSocialMenuChange(index, "title", e.target.value)
-                        }
-                        placeholder="Başlık"
-                      />
-                      <Label htmlFor={`socialMenu-url-${index}`}>URL</Label>
-                      <Input
-                        id={`socialMenu-url-${index}`}
-                        value={item.url}
-                        onChange={(e) =>
-                          handleSocialMenuChange(index, "url", e.target.value)
-                        }
-                        placeholder="URL"
-                      />
-                      <Button
-                        variant="destructive"
-                        onClick={() => handleRemoveSocialMenu(index)}
+                <CardContent>
+                  <div className="space-y-4">
+                    {socialMenu.map((item, index) => (
+                      <div key={index} className="flex flex-col md:flex-row gap-4">
+                        <div className="flex-1">
+                          <Label htmlFor={`social-title-${index}`} className="dark:text-white">Başlık</Label>
+                          <Input 
+                            id={`social-title-${index}`}
+                            value={item.title} 
+                            onChange={(e) => handleSocialMenuChange(index, 'title', e.target.value)}
+                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <Label htmlFor={`social-url-${index}`} className="dark:text-white">URL</Label>
+                          <Input 
+                            id={`social-url-${index}`}
+                            value={item.url} 
+                            onChange={(e) => handleSocialMenuChange(index, 'url', e.target.value)}
+                            className="dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                          />
+                        </div>
+                        <div className="flex items-end pb-1">
+                          <Button 
+                            variant="destructive" 
+                            onClick={() => handleRemoveSocialMenu(index)}
+                            className="dark:bg-red-900 dark:hover:bg-red-800"
+                          >
+                            Sil
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex justify-between pt-4">
+                      <Button 
+                        onClick={handleAddSocialMenu}
+                        className="dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
                       >
-                        Sil
+                        Yeni Ekle
+                      </Button>
+                      <Button 
+                        onClick={handleSocialMenuUpdate}
+                        className="dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                      >
+                        Sosyal Menüyü Güncelle
                       </Button>
                     </div>
-                  ))}
-                  <div className="flex justify-between">
-                    <Button variant="secondary" onClick={handleAddSocialMenu}>
-                      Yeni Sosyal Menü Ekle
-                    </Button>
-                    <Button onClick={handleSocialMenuUpdate}>
-                      Sosyal Menüyü Güncelle
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
