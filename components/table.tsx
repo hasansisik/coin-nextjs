@@ -272,83 +272,112 @@ export default function CryptoTable() {
 
   return (
     <div className="w-full space-y-4">
-      <div className="w-full overflow-x-auto">
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <p className="dark:text-white">Yükleniyor...</p>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <p className="dark:text-white">Yükleniyor...</p>
+        </div>
+      ) : (
+        <div className="border rounded-lg shadow-sm overflow-hidden dark:border-gray-800">
+          <div className="w-full overflow-x-auto custom-scrollbar">
+            <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar">
+              <table className="w-full border-collapse text-sm">
+                <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
+                  <tr className="text-left font-medium text-gray-800 dark:text-gray-200 border-b dark:border-gray-700">
+                    <th className="px-4 py-3 whitespace-nowrap">#</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Coin</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Fiyat</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1g)</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1h)</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1a)</th>
+                    <th className="px-4 py-3 whitespace-nowrap">24s Hacim</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Market Değeri</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Dolaşım Arzı</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Toplam Arz</th>
+                    <th className="px-4 py-3 whitespace-nowrap">Max Arz</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cryptoData.map((crypto) => (
+                    <tr
+                      key={crypto.id}
+                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                    >
+                      <td className="px-4 py-3 font-bold dark:text-white">{crypto.id}</td>
+                      <td className="px-4 py-3 max-w-[250px]">
+                        <div className="flex items-center gap-2">
+                          <img
+                            src={crypto.icon}
+                            alt={crypto.name}
+                            className="h-8 w-8 rounded-full flex-shrink-0"
+                          />
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span className="font-medium truncate dark:text-white">{crypto.name}</span>
+                            <span className="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{crypto.symbol}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 font-medium dark:text-white">
+                        {formatNumber(crypto.price)}
+                      </td>
+                      <td className="px-4 py-4">
+                        {formatPercentage(crypto.supplyChange1d)}
+                      </td>
+                      <td className="px-4 py-4">
+                        {formatPercentage(crypto.supplyChange1w)}
+                      </td>
+                      <td className="px-4 py-4">
+                        {formatPercentage(crypto.supplyChange1m)}
+                      </td>
+                      <td className="px-4 py-4 dark:text-gray-300">
+                        {formatCurrency(crypto.volume24h, true)}
+                      </td>
+                      <td className="px-4 py-4 dark:text-gray-300">
+                        {formatCurrency(crypto.marketCap, true)}
+                      </td>
+                      <td className="px-4 py-4 dark:text-gray-300">
+                        {formatCurrency(crypto.circulatingSupply)}
+                      </td>
+                      <td className="px-4 py-4 dark:text-gray-300">
+                        {formatCurrency(crypto.totalSupply)}
+                      </td>
+                      <td className="px-4 py-4 dark:text-gray-300">
+                        {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        ) : (
-          <div className="relative max-h-[550px] overflow-y-auto">
-            <table className="w-full border-collapse text-sm whitespace-nowrap">
-              <thead className="sticky -top-1 bg-white dark:bg-gray-800 z-10">
-                <tr className="text-left font-medium text-gray-800 dark:text-gray-200">
-                <th className="px-2 py-2">#</th>
-                <th className="px-2 py-2">Coin</th>
-                <th className="px-2 py-2">Fiyat</th>
-                <th className="px-2 py-2">Dolaşımdaki Arz (1g)</th>
-                <th className="px-2 py-2">Dolaşımdaki Arz (1h)</th>
-                <th className="px-2 py-2">Dolaşımdaki Arz (1a)</th>
-                <th className="px-2 py-2">24s Hacim</th>
-                <th className="px-2 py-2">Market Değeri</th>
-                <th className="px-2 py-2">Dolaşım Arzı</th>
-                <th className="px-2 py-2">Toplam Arz</th>
-                <th className="px-2 py-2">Max Arz</th>
-              </tr>
-              </thead>
-              <tbody>
-              {cryptoData.map((crypto) => (
-                <tr
-                  key={crypto.id}
-                  className="border-t border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                >
-                  <td className="px-2 py-3 font-bold dark:text-white">{crypto.id}</td>
-                  <td className="px-2 py-3 max-w-[250px]">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src={crypto.icon}
-                        alt={crypto.name}
-                        className="h-8 w-8 rounded-full flex-shrink-0"
-                      />
-                      <div className="flex items-center gap-1 min-w-0">
-                        <span className="font-medium truncate dark:text-white">{crypto.name}</span>
-                        <span className="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">{crypto.symbol}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-2 py-4 font-medium dark:text-white">
-                    {formatNumber(crypto.price)}
-                  </td>
-                  <td className="px-2 py-4">
-                    {formatPercentage(crypto.supplyChange1d)}
-                  </td>
-                  <td className="px-2 py-4">
-                    {formatPercentage(crypto.supplyChange1w)}
-                  </td>
-                  <td className="px-2 py-4">
-                    {formatPercentage(crypto.supplyChange1m)}
-                  </td>
-                  <td className="px-2 py-4 dark:text-gray-300">
-                    {formatCurrency(crypto.volume24h, true)}
-                  </td>
-                  <td className="px-2 py-4 dark:text-gray-300">
-                    {formatCurrency(crypto.marketCap, true)}
-                  </td>
-                  <td className="px-2 py-4 dark:text-gray-300">
-                    {formatCurrency(crypto.circulatingSupply)}
-                  </td>
-                  <td className="px-2 py-4 dark:text-gray-300">
-                    {formatCurrency(crypto.totalSupply)}
-                  </td>
-                  <td className="px-2 py-4 dark:text-gray-300">
-                    {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
-                  </td>
-                </tr>
-              ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.2);
+          border-radius: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(0, 0, 0, 0.3);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+          background: rgba(255, 255, 255, 0.05);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.3);
+        }
+      `}</style>
 
       <Pagination>
         <PaginationContent>
