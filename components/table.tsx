@@ -118,6 +118,9 @@ export default function CryptoTable() {
     const fetchSupplyHistory = async (coins: CryptoData[]) => {
       try {
         const symbols = coins.map((coin) => coin.symbol.toLowerCase());
+        
+        // Sembol listesini kontrol et
+        
         const supplyResponse = await axios.get(
           `${server}/supply-history/bulk`,
           {
@@ -125,11 +128,25 @@ export default function CryptoTable() {
           }
         );
 
+        // API yanıtını debug için loglayalım
+        console.log("Supply history API response:", supplyResponse.data);
+
         const supplyDataMap: SupplyDataMap = supplyResponse.data.data;
+        
+        // Eğer veri boş ise loglayalım
+        if (!supplyDataMap || Object.keys(supplyDataMap).length === 0) {
+          console.warn("Supply history data is empty");
+          return coins;
+        }
 
         return coins.map((coin) => {
           const history = supplyDataMap[coin.symbol.toUpperCase()];
           const currentSupply = coin.circulatingSupply;
+
+          // Eğer coin sembolü için veri yoksa loglayalım
+          if (!history) {
+            console.log(`No supply history found for ${coin.symbol}`);
+          }
 
           if (
             !history ||
@@ -150,22 +167,36 @@ export default function CryptoTable() {
           const oneMonthAgo = new Date(
             now.getTime() - 30 * 24 * 60 * 60 * 1000
           );
-          const oneYearAgo = new Date(
-            now.getTime() - 365 * 24 * 60 * 60 * 1000
-          );
+
+          // Supply verilerinin detaylarını inceleyelim
+          console.log(`Supply data for ${coin.symbol}:`, {
+            dataPoints: history.dailySupplies.length,
+            oldestRecord: new Date(history.dailySupplies[0].timestamp).toISOString(),
+            newestRecord: new Date(history.dailySupplies[history.dailySupplies.length - 1].timestamp).toISOString(),
+            currentSupply
+          });
 
           const findClosestSupply = (targetDate: Date) => {
+            // Tarih aralığı kontrolü için loglama
+            console.log(`Finding supply for ${coin.symbol} near ${targetDate.toISOString()}`);
+            
             const supplies = history.dailySupplies.filter(
-              (supply: SupplyData) =>
-                Math.abs(
+              (supply: SupplyData) => {
+                const timeDiff = Math.abs(
                   new Date(supply.timestamp).getTime() - targetDate.getTime()
-                ) <=
-                24 * 60 * 60 * 1000
+                );
+                
+                // 24 saatlik aralığı 48 saate çıkaralım
+                return timeDiff <= 48 * 60 * 60 * 1000;
+              }
             );
 
-            if (supplies.length === 0) return null;
+            if (supplies.length === 0) {
+              console.log(`No supplies found for ${coin.symbol} near ${targetDate.toISOString()}`);
+              return null;
+            }
 
-            return supplies.reduce((prev, curr) => {
+            const closest = supplies.reduce((prev, curr) => {
               const prevDiff = Math.abs(
                 new Date(prev.timestamp).getTime() - targetDate.getTime()
               );
@@ -174,6 +205,9 @@ export default function CryptoTable() {
               );
               return prevDiff < currDiff ? prev : curr;
             });
+            
+            console.log(`Found supply for ${coin.symbol}: ${closest.circulatingSupply} (${new Date(closest.timestamp).toISOString()})`);
+            return closest;
           };
 
           const calculateChange = (oldSupply: number | null) => {
@@ -181,6 +215,10 @@ export default function CryptoTable() {
               return { change: null, supply: null };
             }
             const supplyDifference = currentSupply - oldSupply;
+            
+            // Değişim bilgisini loglayalım
+            console.log(`Supply change for ${coin.symbol}: ${supplyDifference} (${oldSupply} -> ${currentSupply})`);
+            
             return {
               change: supplyDifference,
               supply: oldSupply
@@ -190,9 +228,8 @@ export default function CryptoTable() {
           const daySupply = findClosestSupply(oneDayAgo);
           const weekSupply = findClosestSupply(oneWeekAgo);
           const monthSupply = findClosestSupply(oneMonthAgo);
-          const yearSupply = findClosestSupply(oneYearAgo);
 
-          return {
+          const result = {
             ...coin,
             supplyChange1d: daySupply
               ? calculateChange(daySupply.circulatingSupply)
@@ -204,8 +241,18 @@ export default function CryptoTable() {
               ? calculateChange(monthSupply.circulatingSupply)
               : { change: null, supply: null },
           };
+          
+          // Sonucu loglayalım
+          console.log(`Final supply data for ${coin.symbol}:`, {
+            day: result.supplyChange1d,
+            week: result.supplyChange1w,
+            month: result.supplyChange1m
+          });
+          
+          return result;
         });
       } catch (error) {
+        console.error('Error fetching supply history:', error);
         return coins;
       }
     };
@@ -296,17 +343,20 @@ export default function CryptoTable() {
       return <span className="text-gray-500 dark:text-gray-400">-</span>;
     }
 
-    const color = value.change === 0
+    // Değişimi daha anlamlı göstermek için tam sayıya yuvarla
+    const roundedChange = Math.round(value.change);
+    
+    const color = roundedChange === 0
       ? "text-gray-500 dark:text-gray-400"
-      : value.change < 0
+      : roundedChange < 0
       ? "text-red-500 dark:text-red-400"
       : "text-green-500 dark:text-green-400";
-    const prefix = value.change === 0 ? "" : value.change < 0 ? "▼ " : "▲ ";
+    const prefix = roundedChange === 0 ? "" : roundedChange < 0 ? "▼ " : "▲ ";
 
     return (
-      <span className={color}>
+      <span className={color} title={value.supply ? `Önceki Arz: ${value.supply.toLocaleString()}` : ""}>
         {prefix}
-        {Math.abs(value.change).toLocaleString("en-US")}
+        {Math.abs(roundedChange).toLocaleString("en-US")}
       </span>
     );
   };
@@ -368,9 +418,15 @@ export default function CryptoTable() {
                   <th className="px-4 py-3 whitespace-nowrap">#</th>
                   <th className="px-4 py-3 whitespace-nowrap">Coin</th>
                   <th className="px-4 py-3 whitespace-nowrap">Fiyat</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1g)</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1h)</th>
-                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1a)</th>
+                  <th className="px-4 py-3 whitespace-nowrap">
+                    <span title="Son 24 saat içindeki dolaşım arzı değişimi">Arz Değişimi (24s)</span>
+                  </th>
+                  <th className="px-4 py-3 whitespace-nowrap">
+                    <span title="Son 1 hafta içindeki dolaşım arzı değişimi">Arz Değişimi (1h)</span>
+                  </th>
+                  <th className="px-4 py-3 whitespace-nowrap">
+                    <span title="Son 1 ay içindeki dolaşım arzı değişimi">Arz Değişimi (1a)</span>
+                  </th>
                   <th className="px-4 py-3 whitespace-nowrap">24s Hacim</th>
                   <th className="px-4 py-3 whitespace-nowrap">Market Değeri</th>
                   <th className="px-4 py-3 whitespace-nowrap">Dolaşım Arzı</th>
