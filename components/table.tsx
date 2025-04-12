@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/pagination";
 import { server } from "@/config";
 import { Bitcoin } from "lucide-react";
+import { rateLimit } from "@/utils/rateLimit";
 
 interface CryptoData {
   id: number;
@@ -43,30 +44,32 @@ interface SupplyDataMap {
 
 export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 100; // 100 coin göster
-  const totalItems = 500; // Toplam 500 coin
+  const itemsPerPage = 15; // Her sayfada 15 coin göster (rate limit için düşürüldü)
+  const totalItems = 500; // Total 500 coins
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const COINGECKO_API = "https://api.coingecko.com/api/v3";
 
   useEffect(() => {
     const fetchCoinGeckoData = async (page: number) => {
       try {
-        // Cache key'i sayfa numarasına göre oluştur
-        const cacheKey = `cryptoData_page_${page}`;
-        const cacheTimeKey = `cryptoDataTime_page_${page}`;
+        const cacheVersion = "v4"; // Direkt CoinGecko API kullanımı için yeni versiyon
+        const cacheKey = `cryptoData_page_${page}_${cacheVersion}`;
+        const cacheTimeKey = `cryptoDataTime_page_${page}_${cacheVersion}`;
         
-        // Önce localStorage'dan veriyi kontrol et
         const cachedData = localStorage.getItem(cacheKey);
         const cacheTime = localStorage.getItem(cacheTimeKey);
         const now = Date.now();
         
-        // Cache 5 dakikadan yeni ise kullan
-        if (cachedData && cacheTime && (now - Number(cacheTime)) < 5 * 60 * 1000) {
+        if (cachedData && cacheTime && (now - Number(cacheTime)) < 3 * 60 * 1000) {
           return JSON.parse(cachedData);
         }
 
-        const response = await axios.get(`${server}/coingecko/markets`, {
+        await rateLimit();
+        
+        console.log(`Fetching page ${page} from CoinGecko API`);
+        const response = await axios.get(`${COINGECKO_API}/coins/markets`, {
           params: {
             vs_currency: "usd",
             order: "market_cap_desc",
@@ -74,10 +77,16 @@ export default function CryptoTable() {
             page: page,
             sparkline: false,
           },
-          timeout: 10000, // 10 saniye timeout
+          timeout: 10000,
         });
 
+        if (!response.data || response.data.length === 0) {
+          console.warn(`Page ${page} returned no data from API`);
+          return [];
+        }
+        
         const startIndex = (page - 1) * itemsPerPage + 1;
+        
         const coins = response.data.map((coin: any, index: number) => ({
           id: startIndex + index,
           name: coin.name,
@@ -94,15 +103,13 @@ export default function CryptoTable() {
           supplyChange1m: { change: 0, supply: 0 },
         }));
 
-        // Cache'i güncelle
         localStorage.setItem(cacheKey, JSON.stringify(coins));
         localStorage.setItem(cacheTimeKey, String(now));
 
         return coins;
       } catch (error) {
         console.error('Error fetching data:', error);
-        // Hata durumunda cache'den veriyi göster
-        const cacheKey = `cryptoData_page_${page}`;
+        const cacheKey = `cryptoData_page_${page}_v4`;
         const cachedData = localStorage.getItem(cacheKey);
         return cachedData ? JSON.parse(cachedData) : [];
       }
@@ -204,35 +211,68 @@ export default function CryptoTable() {
     };
 
     const fetchData = async () => {
+      const cacheVersion = "v4";
+      const cacheKey = `cryptoData_page_${currentPage}_${cacheVersion}`;
+      const cachedData = localStorage.getItem(cacheKey);
+      const cacheEnhancedKey = `cryptoDataEnhanced_page_${currentPage}_${cacheVersion}`;
+      const cachedEnhancedData = localStorage.getItem(cacheEnhancedKey);
+      
+      if (cachedEnhancedData) {
+        setCryptoData(JSON.parse(cachedEnhancedData));
+        setIsRefreshing(false);
+      } else if (cachedData) {
+        setCryptoData(JSON.parse(cachedData));
+        setIsRefreshing(true);
+      } else {
+        setIsRefreshing(true);
+      }
+
+      if (currentPage === 1 && !localStorage.getItem('cache_cleaned_v4')) {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('cryptoData_') || key.startsWith('cryptoDataEnhanced_') || key.startsWith('cryptoDataTime_')) {
+            if (!key.includes('_v4')) {
+              localStorage.removeItem(key);
+            }
+          }
+        });
+        localStorage.setItem('cache_cleaned_v4', 'true');
+      }
+
       try {
-        setIsLoading(true);
-        const coins = await fetchCoinGeckoData(currentPage);
+        const coinsPromise = fetchCoinGeckoData(currentPage);
+        const coins = await coinsPromise;
         
-        if (coins.length > 0) {
-          const enhancedCoins = await fetchSupplyHistory(coins);
+        if (coins && coins.length > 0) {
+          if (!cachedData && !cachedEnhancedData) {
+            setCryptoData(coins);
+          }
+          
+          const supplyPromise = fetchSupplyHistory(coins);
+          const enhancedCoins = await supplyPromise;
+          
           setCryptoData(enhancedCoins);
+          
+          localStorage.setItem(cacheEnhancedKey, JSON.stringify(enhancedCoins));
+        } else {
+          console.error(`No coins returned for page ${currentPage}`);
+          setIsRefreshing(false);
         }
       } catch (error) {
-        console.error('Error:', error);
-        // Herhangi bir hata durumunda cache'den veriyi göster
-        const cacheKey = `cryptoData_page_${currentPage}`;
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) {
+        console.error('Error fetching fresh data:', error);
+        if (!cryptoData.length && cachedData) {
           setCryptoData(JSON.parse(cachedData));
         }
       } finally {
-        setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
 
     fetchData();
     
-    // 5 dakikada bir otomatik yenile
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [currentPage]); // currentPage değiştiğinde yeniden fetch yap
+  }, [currentPage, itemsPerPage]);
 
-  // Format numbers to display like in the image
   const formatNumber = (num: number): string => {
     return num
       .toLocaleString("en-US", {
@@ -271,39 +311,76 @@ export default function CryptoTable() {
     );
   };
 
+  const handlePageChange = (page: number) => {
+    try {
+      const cacheKeys = [
+        `cryptoData_page_${page}_v4`,
+        `cryptoDataEnhanced_page_${page}_v4`,
+        `cryptoDataTime_page_${page}_v4`
+      ];
+      
+      cacheKeys.forEach(key => {
+        if (localStorage.getItem(key)) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {
+      console.error("Error clearing cache:", e);
+    }
+    
+    setCryptoData([]);
+    setIsRefreshing(true);
+    setCurrentPage(page);
+  };
+
   return (
     <div className="w-full space-y-4">
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="bitcoin-loader">
-            <div className="bitcoin-wrapper">
-              <Bitcoin size={48} className="bitcoin-icon" />
+      <div className="border rounded-lg shadow-sm overflow-hidden dark:border-gray-800 md:border-0 md:shadow-none relative">
+        {isRefreshing && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-white/70 dark:bg-gray-900/70">
+            <div className="bitcoin-loader">
+              <div className="bitcoin-wrapper">
+                <Bitcoin size={36} className="bitcoin-icon" />
+              </div>
+              <div className="loader-text">Veriler yükleniyor</div>
             </div>
-            <div className="loader-text">Yükleniyor</div>
           </div>
-        </div>
-      ) : (
-        <div className="border rounded-lg shadow-sm overflow-hidden dark:border-gray-800 md:border-0 md:shadow-none">
-          <div className="w-full overflow-x-auto custom-scrollbar md:overflow-visible">
-            <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar md:overflow-visible md:max-h-none">
-              <table className="w-full border-collapse text-sm">
-                <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 md:static">
-                  <tr className="text-left font-medium text-gray-800 dark:text-gray-200 border-b dark:border-gray-700">
-                    <th className="px-4 py-3 whitespace-nowrap">#</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Coin</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Fiyat</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1g)</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1h)</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1a)</th>
-                    <th className="px-4 py-3 whitespace-nowrap">24s Hacim</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Market Değeri</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Dolaşım Arzı</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Toplam Arz</th>
-                    <th className="px-4 py-3 whitespace-nowrap">Max Arz</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cryptoData.map((crypto) => (
+        )}
+        
+        <div className={`w-full overflow-x-auto custom-scrollbar md:overflow-visible ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
+          <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar md:overflow-visible md:max-h-none">
+            <div className="flex justify-between items-center px-4 py-2 bg-gray-50 dark:bg-gray-800/50">
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                Sayfa {currentPage} / {totalPages} - {(currentPage - 1) * itemsPerPage + 1} ile {Math.min(currentPage * itemsPerPage, totalItems)} arası coinler gösteriliyor
+              </div>
+              <div className="flex items-center space-x-2">
+                <button 
+                  onClick={() => handlePageChange(1)}
+                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
+                >
+                  Sayfa Başı
+                </button>
+              </div>
+            </div>
+            <table className="w-full border-collapse text-sm">
+              <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 md:static">
+                <tr className="text-left font-medium text-gray-800 dark:text-gray-200 border-b dark:border-gray-700">
+                  <th className="px-4 py-3 whitespace-nowrap">#</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Coin</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Fiyat</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1g)</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1h)</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dolaşımdaki Arz (1a)</th>
+                  <th className="px-4 py-3 whitespace-nowrap">24s Hacim</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Market Değeri</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Dolaşım Arzı</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Toplam Arz</th>
+                  <th className="px-4 py-3 whitespace-nowrap">Max Arz</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cryptoData.length > 0 ? (
+                  cryptoData.map((crypto) => (
                     <tr
                       key={crypto.id}
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -350,16 +427,21 @@ export default function CryptoTable() {
                         {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  ))
+                ) : !isRefreshing && (
+                  <tr>
+                    <td colSpan={11} className="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                      Coinler yükleniyor...
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      )}
+      </div>
 
       <style jsx global>{`
-        /* Mobile scrollbar styles (hidden on desktop) */
         @media (max-width: 768px) {
           .custom-scrollbar::-webkit-scrollbar {
             width: 8px;
@@ -387,14 +469,12 @@ export default function CryptoTable() {
           }
         }
         
-        /* Hide scrollbar on desktop */
         @media (min-width: 769px) {
           .custom-scrollbar::-webkit-scrollbar {
             display: none;
           }
         }
 
-        /* Bitcoin advanced loader animation */
         .bitcoin-loader {
           display: flex;
           flex-direction: column;
@@ -404,8 +484,8 @@ export default function CryptoTable() {
         
         .bitcoin-wrapper {
           position: relative;
-          width: 80px;
-          height: 80px;
+          width: 60px;
+          height: 60px;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -414,8 +494,8 @@ export default function CryptoTable() {
         .bitcoin-wrapper::before {
           content: '';
           position: absolute;
-          width: 80px;
-          height: 80px;
+          width: 60px;
+          height: 60px;
           border-radius: 50%;
           background: rgba(247, 147, 26, 0.15);
           animation: pulse 2s ease-in-out infinite;
@@ -424,8 +504,8 @@ export default function CryptoTable() {
         .bitcoin-wrapper::after {
           content: '';
           position: absolute;
-          width: 60px;
-          height: 60px;
+          width: 45px;
+          height: 45px;
           border-radius: 50%;
           border: 2px solid rgba(247, 147, 26, 0.5);
           border-top-color: #f7931a;
@@ -442,7 +522,7 @@ export default function CryptoTable() {
         .loader-text {
           color: #f7931a;
           font-weight: 600;
-          font-size: 16px;
+          font-size: 14px;
           position: relative;
           display: inline-block;
         }
@@ -501,7 +581,7 @@ export default function CryptoTable() {
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
               className={
                 currentPage === 1
                   ? "pointer-events-none opacity-50"
@@ -510,20 +590,63 @@ export default function CryptoTable() {
             />
           </PaginationItem>
 
-          {[...Array(totalPages)].map((_, i) => (
-            <PaginationItem key={i + 1} className={i > 4 ? "hidden sm:flex" : ""}>
+          {[1, 2, 3].map((pageNum) => (
+            pageNum <= totalPages && (
+              <PaginationItem key={pageNum}>
+                <PaginationLink
+                  onClick={() => handlePageChange(pageNum)}
+                  isActive={currentPage === pageNum}
+                >
+                  {pageNum}
+                </PaginationLink>
+              </PaginationItem>
+            )
+          ))}
+
+          {currentPage > 6 && (
+            <PaginationItem>
+              <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
+            </PaginationItem>
+          )}
+
+          {totalPages > 3 && 
+            Array.from({ length: 3 }, (_, i) => currentPage - 1 + i).map(pageNum => {
+              if (pageNum > 3 && pageNum <= totalPages - 3) {
+                return (
+                  <PaginationItem key={pageNum}>
+                    <PaginationLink
+                      onClick={() => handlePageChange(pageNum)}
+                      isActive={currentPage === pageNum}
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              }
+              return null;
+            })
+          }
+
+          {currentPage < totalPages - 5 && (
+            <PaginationItem>
+              <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
+            </PaginationItem>
+          )}
+
+          {totalPages > 3 && [totalPages - 2, totalPages - 1, totalPages].map((pageNum) => (
+            <PaginationItem key={pageNum}>
               <PaginationLink
-                onClick={() => setCurrentPage(i + 1)}
-                isActive={currentPage === i + 1}
+                onClick={() => handlePageChange(pageNum)}
+                isActive={currentPage === pageNum}
               >
-                {i + 1}
+                {pageNum}
               </PaginationLink>
             </PaginationItem>
           ))}
 
           <PaginationItem>
             <PaginationNext
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
               className={
                 currentPage === totalPages
                   ? "pointer-events-none opacity-50"
