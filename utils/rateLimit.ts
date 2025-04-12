@@ -5,7 +5,7 @@
 // Son istek zamanını tutan değişken
 let lastRequestTime = 0;
 // İstekler arası minimum gecikme (milisaniye)
-const MIN_DELAY = 1200; // 1.2 saniye - saniyede yaklaşık 5 istek 
+const MIN_DELAY = 2000; // 2 saniye - sayfa başına 50 coin için gecikmeyi arttırdık
 
 /**
  * İstek yapmadan önce çağrılarak, istekleri rate limit altında tutmaya yarayan fonksiyon

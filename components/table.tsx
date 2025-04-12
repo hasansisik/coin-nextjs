@@ -46,7 +46,7 @@ export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 15; // Her sayfada 15 coin göster (rate limit için düşürüldü)
+  const itemsPerPage = 50; // Her sayfada 50 coin göster
   const totalItems = 500; // Total 500 coins
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const COINGECKO_API = "https://api.coingecko.com/api/v3";
@@ -54,7 +54,7 @@ export default function CryptoTable() {
   useEffect(() => {
     const fetchCoinGeckoData = async (page: number) => {
       try {
-        const cacheVersion = "v4"; // Direkt CoinGecko API kullanımı için yeni versiyon
+        const cacheVersion = "v5"; // 50 coin/sayfa için yeni versiyon
         const cacheKey = `cryptoData_page_${page}_${cacheVersion}`;
         const cacheTimeKey = `cryptoDataTime_page_${page}_${cacheVersion}`;
         
@@ -62,13 +62,13 @@ export default function CryptoTable() {
         const cacheTime = localStorage.getItem(cacheTimeKey);
         const now = Date.now();
         
-        if (cachedData && cacheTime && (now - Number(cacheTime)) < 3 * 60 * 1000) {
+        if (cachedData && cacheTime && (now - Number(cacheTime)) < 5 * 60 * 1000) {
           return JSON.parse(cachedData);
         }
 
         await rateLimit();
         
-        console.log(`Fetching page ${page} from CoinGecko API`);
+        console.log(`Fetching page ${page} of ${itemsPerPage} coins from CoinGecko API`);
         const response = await axios.get(`${COINGECKO_API}/coins/markets`, {
           params: {
             vs_currency: "usd",
@@ -77,7 +77,7 @@ export default function CryptoTable() {
             page: page,
             sparkline: false,
           },
-          timeout: 10000,
+          timeout: 15000, // Daha uzun timeout - büyük veri setleri için
         });
 
         if (!response.data || response.data.length === 0) {
@@ -109,7 +109,7 @@ export default function CryptoTable() {
         return coins;
       } catch (error) {
         console.error('Error fetching data:', error);
-        const cacheKey = `cryptoData_page_${page}_v4`;
+        const cacheKey = `cryptoData_page_${page}_v5`;
         const cachedData = localStorage.getItem(cacheKey);
         return cachedData ? JSON.parse(cachedData) : [];
       }
@@ -211,7 +211,7 @@ export default function CryptoTable() {
     };
 
     const fetchData = async () => {
-      const cacheVersion = "v4";
+      const cacheVersion = "v5";
       const cacheKey = `cryptoData_page_${currentPage}_${cacheVersion}`;
       const cachedData = localStorage.getItem(cacheKey);
       const cacheEnhancedKey = `cryptoDataEnhanced_page_${currentPage}_${cacheVersion}`;
@@ -227,15 +227,15 @@ export default function CryptoTable() {
         setIsRefreshing(true);
       }
 
-      if (currentPage === 1 && !localStorage.getItem('cache_cleaned_v4')) {
+      if (currentPage === 1 && !localStorage.getItem('cache_cleaned_v5')) {
         Object.keys(localStorage).forEach(key => {
           if (key.startsWith('cryptoData_') || key.startsWith('cryptoDataEnhanced_') || key.startsWith('cryptoDataTime_')) {
-            if (!key.includes('_v4')) {
+            if (!key.includes('_v5')) {
               localStorage.removeItem(key);
             }
           }
         });
-        localStorage.setItem('cache_cleaned_v4', 'true');
+        localStorage.setItem('cache_cleaned_v5', 'true');
       }
 
       try {
@@ -314,9 +314,9 @@ export default function CryptoTable() {
   const handlePageChange = (page: number) => {
     try {
       const cacheKeys = [
-        `cryptoData_page_${page}_v4`,
-        `cryptoDataEnhanced_page_${page}_v4`,
-        `cryptoDataTime_page_${page}_v4`
+        `cryptoData_page_${page}_v5`,
+        `cryptoDataEnhanced_page_${page}_v5`,
+        `cryptoDataTime_page_${page}_v5`
       ];
       
       cacheKeys.forEach(key => {
