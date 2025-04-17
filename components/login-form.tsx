@@ -23,31 +23,34 @@ const theme = createTheme({
           '& .MuiOutlinedInput-root': {
             '& fieldset': {
               borderWidth: '2px',
-              borderImage: 'linear-gradient(to right, #2563eb, #38bdf8)',
-              borderImageSlice: 1,
-              borderRadius: '20px',
+              border: '2px solid #2B84A4',
+              borderRadius: '8px',
             },
             '&:hover fieldset': {
               borderWidth: '2px',
-              borderImage: 'linear-gradient(to right, #3b82f6, #22d3ee)',
-              borderImageSlice: 1,
-              borderRadius: '20px',
+              border: '2px solid #2B84A4',
+              borderRadius: '8px',
             },
             '&.Mui-focused fieldset': {
               borderWidth: '2px',
-              borderImage: 'linear-gradient(to right, #3b82f6, #22d3ee)',
-              borderImageSlice: 1,
-              borderRadius: '20px',
+              border: '2px solid #2B84A4',
+              borderRadius: '8px',
             },
             backgroundColor: 'transparent',
             color: 'white',
-            borderRadius: '20px',
+            borderRadius: '8px',
           },
           '& .MuiInputLabel-root': {
             color: '#93c5fd',
-          },
-          '& .MuiInputLabel-root.Mui-focused': {
-            color: '#3b82f6',
+            '&.Mui-focused, &.MuiFormLabel-filled': {
+              color: '#2C87A2',
+            },
+            '&.MuiInputLabel-shrink': {
+              backgroundColor: 'rgba(0, 0, 0, 0.7)',
+              padding: '0 4px',
+              borderRadius: '2px',
+              transformOrigin: 'top left',
+            },
           },
           '& input::placeholder': {
             color: 'rgba(255, 255, 255, 0.5)',
@@ -65,7 +68,7 @@ export function LoginForm({
   const router = useRouter();
   const { toast } = useToast();
   const dispatch = useDispatch<AppDispatch>();
-  const { footer } = useSelector((state: any) => state.footer);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
     dispatch(getFooterData());
@@ -131,10 +134,21 @@ export function LoginForm({
     window.open("https://www.instagram.com/kriptotek/", "_blank", "noopener,noreferrer");
   };
 
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitAttempted(true);
+    formik.handleSubmit(e);
+  };
+
+  // Only show validation errors if the form was submitted at least once
+  const shouldShowError = (fieldName: string) => {
+    return submitAttempted && formik.touched[fieldName as keyof typeof formik.touched] && Boolean(formik.errors[fieldName as keyof typeof formik.errors]);
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <div className={cn("flex flex-col gap-4", className)} {...props}>
-        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-8">
           <TextField
             id="email"
             name="email"
@@ -146,15 +160,19 @@ export function LoginForm({
             value={formik.values.email}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            error={formik.touched.email && Boolean(formik.errors.email)}
-            helperText={formik.touched.email && formik.errors.email}
+            error={shouldShowError('email')}
+            helperText={shouldShowError('email') ? formik.errors.email : ""}
+            InputLabelProps={{ 
+              shrink: true,
+              style: { background: 'transparent' }
+            }}
             FormHelperTextProps={{
               style: { color: '#ef4444', fontSize: '0.75rem', marginTop: '2px' }
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'transparent',
-                borderRadius: '20px'
+                borderRadius: '10px'
               }
             }}
           />
@@ -171,15 +189,19 @@ export function LoginForm({
             value={formik.values.password}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
-            error={formik.touched.password && Boolean(formik.errors.password)}
-            helperText={formik.touched.password && formik.errors.password}
+            error={shouldShowError('password')}
+            helperText={shouldShowError('password') ? formik.errors.password : ""}
+            InputLabelProps={{ 
+              shrink: true,
+              style: { background: 'transparent' }
+            }}
             FormHelperTextProps={{
               style: { color: '#ef4444', fontSize: '0.75rem', marginTop: '2px' }
             }}
             sx={{
               '& .MuiOutlinedInput-root': {
                 backgroundColor: 'transparent',
-                borderRadius: '20px'
+                borderRadius: '10px'
               }
             }}
           />

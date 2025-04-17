@@ -36,7 +36,7 @@ export default function LoginPage() {
         </Link>
       </div>
       
-      <div className="absolute inset-0 flex flex-col items-center justify-end gap-6 p-6 pb-20 md:p-10 md:pb-20">
+      <div className="absolute inset-0 flex flex-col items-center justify-end gap-6 p-6 pb-20 md:p-10 md:pb-10">
         <div className="w-full max-w-sm">
           <LoginForm />
         </div>
