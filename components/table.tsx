@@ -455,31 +455,31 @@ export default function CryptoTable() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-4 font-medium dark:text-white">
+                      <td className="px-4 py-4 font-bold dark:text-white">
                         {formatNumber(crypto.price)}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 font-bold">
                         {formatPercentage(crypto.supplyChange1d)}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 font-bold">
                         {formatPercentage(crypto.supplyChange1w)}
                       </td>
-                      <td className="px-4 py-4">
+                      <td className="px-4 py-4 font-bold">
                         {formatPercentage(crypto.supplyChange1m)}
                       </td>
-                      <td className="px-4 py-4 dark:text-gray-300">
+                      <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.volume24h, true)}
                       </td>
-                      <td className="px-4 py-4 dark:text-gray-300">
+                      <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.marketCap, true)}
                       </td>
-                      <td className="px-4 py-4 dark:text-gray-300">
+                      <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.circulatingSupply)}
                       </td>
-                      <td className="px-4 py-4 dark:text-gray-300">
+                      <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.totalSupply)}
                       </td>
-                      <td className="px-4 py-4 dark:text-gray-300">
+                      <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {crypto.maxSupply === null ? '∞' : formatCurrency(crypto.maxSupply)}
                       </td>
                     </tr>
