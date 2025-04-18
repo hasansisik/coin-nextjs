@@ -419,13 +419,13 @@ export default function CryptoTable() {
                   <th className="px-4 py-3 whitespace-nowrap">Coin</th>
                   <th className="px-4 py-3 whitespace-nowrap">Fiyat</th>
                   <th className="px-4 py-3 whitespace-nowrap">
-                    <span title="Son 24 saat içindeki dolaşım arzı değişimi">Arz Değişimi (24s)</span>
+                    <span title="Son 24 saat içindeki dolaşım arzı değişimi">Arz Değişimi (24saat)</span>
                   </th>
                   <th className="px-4 py-3 whitespace-nowrap">
-                    <span title="Son 1 hafta içindeki dolaşım arzı değişimi">Arz Değişimi (1h)</span>
+                    <span title="Son 1 hafta içindeki dolaşım arzı değişimi">Arz Değişimi (1hafta)</span>
                   </th>
                   <th className="px-4 py-3 whitespace-nowrap">
-                    <span title="Son 1 ay içindeki dolaşım arzı değişimi">Arz Değişimi (1a)</span>
+                    <span title="Son 1 ay içindeki dolaşım arzı değişimi">Arz Değişimi (1ay)</span>
                   </th>
                   <th className="px-4 py-3 whitespace-nowrap">24s Hacim</th>
                   <th className="px-4 py-3 whitespace-nowrap">Market Değeri</th>
