@@ -11,7 +11,7 @@ export default function LoginPage() {
       </div>
       
       {/* Top right button - styled as in the image */}
-      <div className="absolute top-35 right-33 z-10 flex flex-col items-center">
+      <div className="hidden md:flex absolute top-35 right-33 z-10 flex-col items-center">
         <div className="text-white mb-5">İşlem Aldığım Borsa</div>
         <Link href="https://www.instagram.com/kriptotek/" target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 bg-blue-500 text-white font-medium text-sm rounded-full hover:opacity-90 transition-opacity">
           Butona Tıkla Üye Ol
