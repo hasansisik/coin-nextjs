@@ -11,314 +11,71 @@ import {
 } from "@/components/ui/pagination";
 import { server } from "@/config";
 import { Bitcoin } from "lucide-react";
-import { rateLimit } from "@/utils/rateLimit";
 
 interface CryptoData {
-  id: number;
+  rank: number;
   name: string;
   symbol: string;
   icon: string;
   price: number;
   volume24h: number;
   marketCap: number;
-  totalSupply: number;
   circulatingSupply: number;
+  totalSupply: number;
   maxSupply: number | null;
   supplyChange1d: { change: number | null; supply: number | null };
   supplyChange1w: { change: number | null; supply: number | null };
   supplyChange1m: { change: number | null; supply: number | null };
 }
 
-interface SupplyData {
-  timestamp: string;
-  circulatingSupply: number;
-}
-
-interface SupplyHistory {
-  dailySupplies: SupplyData[];
-}
-
-interface SupplyDataMap {
-  [key: string]: SupplyHistory;
-}
-
 export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCoins, setTotalCoins] = useState(500);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const itemsPerPage = 50; // Her sayfada 50 coin göster
-  const totalItems = 500; // Total 500 coins
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
-  const COINGECKO_API = "https://api.coingecko.com/api/v3";
+  const totalPages = Math.ceil(totalCoins / itemsPerPage);
 
   useEffect(() => {
-    const fetchCoinGeckoData = async (page: number) => {
+    const fetchCoinData = async (page: number) => {
       try {
-        const cacheVersion = "v5"; // 50 coin/sayfa için yeni versiyon
-        const cacheKey = `cryptoData_page_${page}_${cacheVersion}`;
-        const cacheTimeKey = `cryptoDataTime_page_${page}_${cacheVersion}`;
+        setIsRefreshing(true);
         
-        const cachedData = localStorage.getItem(cacheKey);
-        const cacheTime = localStorage.getItem(cacheTimeKey);
-        const now = Date.now();
-        
-        if (cachedData && cacheTime && (now - Number(cacheTime)) < 5 * 60 * 1000) {
-          return JSON.parse(cachedData);
-        }
-
-        await rateLimit();
-        
-        console.log(`Fetching page ${page} of ${itemsPerPage} coins from CoinGecko API`);
-        const response = await axios.get(`${COINGECKO_API}/coins/markets`, {
+        // Backend'den veri çek
+        console.log(`Fetching page ${page} of ${itemsPerPage} coins from backend API`);
+        const response = await axios.get(`${server}/supply-history/coins`, {
           params: {
-            vs_currency: "usd",
-            order: "market_cap_desc",
-            per_page: itemsPerPage,
             page: page,
-            sparkline: false,
+            limit: itemsPerPage
           },
-          timeout: 15000, // Daha uzun timeout - büyük veri setleri için
+          timeout: 15000,
         });
 
-        if (!response.data || response.data.length === 0) {
+        if (!response.data.success || !response.data.data.coins || response.data.data.coins.length === 0) {
           console.warn(`Page ${page} returned no data from API`);
-          return [];
+          setIsRefreshing(false);
+          return;
         }
         
-        const startIndex = (page - 1) * itemsPerPage + 1;
+        const { coins, totalCoins, lastUpdated } = response.data.data;
         
-        const coins = response.data.map((coin: any, index: number) => ({
-          id: startIndex + index,
-          name: coin.name,
-          symbol: coin.symbol.toUpperCase(),
-          icon: coin.image,
-          price: coin.current_price,
-          volume24h: coin.total_volume,
-          marketCap: coin.market_cap,
-          circulatingSupply: coin.circulating_supply || 0,
-          totalSupply: coin.total_supply || 0,
-          maxSupply: coin.max_supply,
-          supplyChange1d: { change: 0, supply: 0 },
-          supplyChange1w: { change: 0, supply: 0 },
-          supplyChange1m: { change: 0, supply: 0 },
-        }));
-
-        localStorage.setItem(cacheKey, JSON.stringify(coins));
-        localStorage.setItem(cacheTimeKey, String(now));
-
-        return coins;
+        setCryptoData(coins);
+        setTotalCoins(totalCoins);
+        setLastUpdated(new Date(lastUpdated));
+        setIsRefreshing(false);
       } catch (error) {
         console.error('Error fetching data:', error);
-        const cacheKey = `cryptoData_page_${page}_v5`;
-        const cachedData = localStorage.getItem(cacheKey);
-        return cachedData ? JSON.parse(cachedData) : [];
-      }
-    };
-
-    const fetchSupplyHistory = async (coins: CryptoData[]) => {
-      try {
-        const symbols = coins.map((coin) => coin.symbol.toLowerCase());
-        
-        // Sembol listesini kontrol et
-        
-        const supplyResponse = await axios.get(
-          `${server}/supply-history/bulk`,
-          {
-            params: { symbols: symbols.join(",") },
-          }
-        );
-
-        // API yanıtını debug için loglayalım
-        console.log("Supply history API response:", supplyResponse.data);
-
-        const supplyDataMap: SupplyDataMap = supplyResponse.data.data;
-        
-        // Eğer veri boş ise loglayalım
-        if (!supplyDataMap || Object.keys(supplyDataMap).length === 0) {
-          console.warn("Supply history data is empty");
-          return coins;
-        }
-
-        return coins.map((coin) => {
-          const history = supplyDataMap[coin.symbol.toUpperCase()];
-          const currentSupply = coin.circulatingSupply;
-
-          // Eğer coin sembolü için veri yoksa loglayalım
-          if (!history) {
-            console.log(`No supply history found for ${coin.symbol}`);
-          }
-
-          if (
-            !history ||
-            !history.dailySupplies ||
-            history.dailySupplies.length === 0
-          ) {
-            return {
-              ...coin,
-              supplyChange1d: { change: null, supply: null },
-              supplyChange1w: { change: null, supply: null },
-              supplyChange1m: { change: null, supply: null },
-            };
-          }
-
-          const now = new Date();
-          const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          const oneMonthAgo = new Date(
-            now.getTime() - 30 * 24 * 60 * 60 * 1000
-          );
-
-          // Supply verilerinin detaylarını inceleyelim
-          console.log(`Supply data for ${coin.symbol}:`, {
-            dataPoints: history.dailySupplies.length,
-            oldestRecord: new Date(history.dailySupplies[0].timestamp).toISOString(),
-            newestRecord: new Date(history.dailySupplies[history.dailySupplies.length - 1].timestamp).toISOString(),
-            currentSupply
-          });
-
-          const findClosestSupply = (targetDate: Date) => {
-            // Tarih aralığı kontrolü için loglama
-            console.log(`Finding supply for ${coin.symbol} near ${targetDate.toISOString()}`);
-            
-            const supplies = history.dailySupplies.filter(
-              (supply: SupplyData) => {
-                const timeDiff = Math.abs(
-                  new Date(supply.timestamp).getTime() - targetDate.getTime()
-                );
-                
-                // 24 saatlik aralığı 48 saate çıkaralım
-                return timeDiff <= 48 * 60 * 60 * 1000;
-              }
-            );
-
-            if (supplies.length === 0) {
-              console.log(`No supplies found for ${coin.symbol} near ${targetDate.toISOString()}`);
-              return null;
-            }
-
-            const closest = supplies.reduce((prev, curr) => {
-              const prevDiff = Math.abs(
-                new Date(prev.timestamp).getTime() - targetDate.getTime()
-              );
-              const currDiff = Math.abs(
-                new Date(curr.timestamp).getTime() - targetDate.getTime()
-              );
-              return prevDiff < currDiff ? prev : curr;
-            });
-            
-            console.log(`Found supply for ${coin.symbol}: ${closest.circulatingSupply} (${new Date(closest.timestamp).toISOString()})`);
-            return closest;
-          };
-
-          const calculateChange = (oldSupply: number | null) => {
-            if (!oldSupply || !currentSupply) {
-              return { change: null, supply: null };
-            }
-            const supplyDifference = currentSupply - oldSupply;
-            
-            // Değişim bilgisini loglayalım
-            console.log(`Supply change for ${coin.symbol}: ${supplyDifference} (${oldSupply} -> ${currentSupply})`);
-            
-            return {
-              change: supplyDifference,
-              supply: oldSupply
-            };
-          };
-
-          const daySupply = findClosestSupply(oneDayAgo);
-          const weekSupply = findClosestSupply(oneWeekAgo);
-          const monthSupply = findClosestSupply(oneMonthAgo);
-
-          const result = {
-            ...coin,
-            supplyChange1d: daySupply
-              ? calculateChange(daySupply.circulatingSupply)
-              : { change: null, supply: null },
-            supplyChange1w: weekSupply
-              ? calculateChange(weekSupply.circulatingSupply)
-              : { change: null, supply: null },
-            supplyChange1m: monthSupply
-              ? calculateChange(monthSupply.circulatingSupply)
-              : { change: null, supply: null },
-          };
-          
-          // Sonucu loglayalım
-          console.log(`Final supply data for ${coin.symbol}:`, {
-            day: result.supplyChange1d,
-            week: result.supplyChange1w,
-            month: result.supplyChange1m
-          });
-          
-          return result;
-        });
-      } catch (error) {
-        console.error('Error fetching supply history:', error);
-        return coins;
-      }
-    };
-
-    const fetchData = async () => {
-      const cacheVersion = "v5";
-      const cacheKey = `cryptoData_page_${currentPage}_${cacheVersion}`;
-      const cachedData = localStorage.getItem(cacheKey);
-      const cacheEnhancedKey = `cryptoDataEnhanced_page_${currentPage}_${cacheVersion}`;
-      const cachedEnhancedData = localStorage.getItem(cacheEnhancedKey);
-      
-      if (cachedEnhancedData) {
-        setCryptoData(JSON.parse(cachedEnhancedData));
-        setIsRefreshing(false);
-      } else if (cachedData) {
-        setCryptoData(JSON.parse(cachedData));
-        setIsRefreshing(true);
-      } else {
-        setIsRefreshing(true);
-      }
-
-      if (currentPage === 1 && !localStorage.getItem('cache_cleaned_v5')) {
-        Object.keys(localStorage).forEach(key => {
-          if (key.startsWith('cryptoData_') || key.startsWith('cryptoDataEnhanced_') || key.startsWith('cryptoDataTime_')) {
-            if (!key.includes('_v5')) {
-              localStorage.removeItem(key);
-            }
-          }
-        });
-        localStorage.setItem('cache_cleaned_v5', 'true');
-      }
-
-      try {
-        const coinsPromise = fetchCoinGeckoData(currentPage);
-        const coins = await coinsPromise;
-        
-        if (coins && coins.length > 0) {
-          if (!cachedData && !cachedEnhancedData) {
-            setCryptoData(coins);
-          }
-          
-          const supplyPromise = fetchSupplyHistory(coins);
-          const enhancedCoins = await supplyPromise;
-          
-          setCryptoData(enhancedCoins);
-          
-          localStorage.setItem(cacheEnhancedKey, JSON.stringify(enhancedCoins));
-        } else {
-          console.error(`No coins returned for page ${currentPage}`);
-          setIsRefreshing(false);
-        }
-      } catch (error) {
-        console.error('Error fetching fresh data:', error);
-        if (!cryptoData.length && cachedData) {
-          setCryptoData(JSON.parse(cachedData));
-        }
-      } finally {
         setIsRefreshing(false);
       }
     };
 
-    fetchData();
+    fetchCoinData(currentPage);
     
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    // 5 dakikada bir otomatik yenileme
+    const interval = setInterval(() => fetchCoinData(currentPage), 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage]);
 
   const formatNumber = (num: number): string => {
     return num
@@ -352,35 +109,42 @@ export default function CryptoTable() {
       ? "text-red-500 dark:text-red-400"
       : "text-green-500 dark:text-green-400";
     const prefix = roundedChange === 0 ? "" : roundedChange < 0 ? "▼ " : "▲ ";
+    
+    // Format number with suffix 'm' for million, 'b' for billion
+    const absChange = Math.abs(roundedChange);
+    let formattedChange: string;
+    
+    if (absChange >= 1_000_000_000) {
+      formattedChange = (absChange / 1_000_000_000).toFixed(2) + 'b';
+    } else if (absChange >= 1_000_000) {
+      formattedChange = (absChange / 1_000_000).toFixed(2) + 'm';
+    } else {
+      formattedChange = absChange.toLocaleString("en-US");
+    }
 
     return (
       <span className={color} title={value.supply ? `Önceki Arz: ${value.supply.toLocaleString()}` : ""}>
         {prefix}
-        {Math.abs(roundedChange).toLocaleString("en-US")}
+        {formattedChange}
       </span>
     );
   };
 
   const handlePageChange = (page: number) => {
-    try {
-      const cacheKeys = [
-        `cryptoData_page_${page}_v5`,
-        `cryptoDataEnhanced_page_${page}_v5`,
-        `cryptoDataTime_page_${page}_v5`
-      ];
-      
-      cacheKeys.forEach(key => {
-        if (localStorage.getItem(key)) {
-          localStorage.removeItem(key);
-        }
-      });
-    } catch (e) {
-      console.error("Error clearing cache:", e);
-    }
-    
     setCryptoData([]);
     setIsRefreshing(true);
     setCurrentPage(page);
+  };
+
+  const formatUpdateTime = (date: Date | null): string => {
+    if (!date) return "-";
+    return date.toLocaleString('tr-TR', {
+      day: 'numeric',
+      month: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -401,7 +165,12 @@ export default function CryptoTable() {
           <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar md:overflow-visible md:max-h-none">
             <div className="flex justify-between items-center px-4 py-2 bg-gray-50 dark:bg-gray-800/50">
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Sayfa {currentPage} / {totalPages} - {(currentPage - 1) * itemsPerPage + 1} ile {Math.min(currentPage * itemsPerPage, totalItems)} arası coinler gösteriliyor
+                Sayfa {currentPage} / {totalPages} - {(currentPage - 1) * itemsPerPage + 1} ile {Math.min(currentPage * itemsPerPage, totalCoins)} arası coinler gösteriliyor
+                {lastUpdated && (
+                  <span className="ml-4">
+                    Son Güncelleme: {formatUpdateTime(lastUpdated)}
+                  </span>
+                )}
               </div>
               <div className="flex items-center space-x-2">
                 <button 
@@ -438,10 +207,10 @@ export default function CryptoTable() {
                 {cryptoData.length > 0 ? (
                   cryptoData.map((crypto) => (
                     <tr
-                      key={crypto.id}
+                      key={crypto.rank}
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                     >
-                      <td className="px-4 py-3 font-bold dark:text-white">{crypto.id}</td>
+                      <td className="px-4 py-3 font-bold dark:text-white">{crypto.rank}</td>
                       <td className="px-4 py-3 max-w-[250px]">
                         <div className="flex items-center gap-2">
                           <img
