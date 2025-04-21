@@ -89,6 +89,14 @@ export default function CryptoTable() {
 
   const formatCurrency = (num: number | null, includeSymbol: boolean = false): string => {
     if (num === null) return '∞';
+    
+    // Add suffix for large numbers
+    if (num >= 1_000_000_000) {
+      return `${includeSymbol ? '$' : ''}${(num / 1_000_000_000).toFixed(2)}b`;
+    } else if (num >= 1_000_000) {
+      return `${includeSymbol ? '$' : ''}${(num / 1_000_000).toFixed(2)}m`;
+    }
+    
     return `${includeSymbol ? '$' : ''}${num.toLocaleString("en-US")}`;
   };
 
