@@ -23,9 +23,7 @@ interface CryptoData {
   circulatingSupply: number;
   totalSupply: number;
   maxSupply: number | null;
-  supplyChange1d: { change: number | null; supply: number | null };
-  supplyChange1w: { change: number | null; supply: number | null };
-  supplyChange1m: { change: number | null; supply: number | null };
+  supplies: { value: number; timestamp: Date }[];
 }
 
 export default function CryptoTable() {
@@ -100,16 +98,45 @@ export default function CryptoTable() {
     return `${includeSymbol ? '$' : ''}${num.toLocaleString("en-US")}`;
   };
 
-  const formatPercentage = (value: {
-    change: number | null;
-    supply: number | null;
-  }): React.ReactElement => {
-    if (value.change === null || isNaN(value.change)) {
+  const formatPercentage = (currentSupply: number, supplies: { value: number, timestamp: Date }[], days: number): React.ReactElement => {
+    // Belirtilen gün sayısı kadar geçmişteki supply değerini bul
+    if (!supplies || supplies.length === 0) {
       return <span className="text-gray-500 dark:text-gray-400">-</span>;
     }
 
+    // Bugünün tarihini al ve belirtilen gün sayısı kadar geriye git
+    const today = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(today.getDate() - days);
+
+    // En yakın tarihli kaydı bul
+    let closestSupply = null;
+    let minTimeDiff = Infinity;
+
+    for (const supply of supplies) {
+      const supplyDate = new Date(supply.timestamp);
+      const timeDiff = Math.abs(supplyDate.getTime() - targetDate.getTime());
+      
+      if (timeDiff < minTimeDiff) {
+        minTimeDiff = timeDiff;
+        closestSupply = supply;
+      }
+    }
+
+    if (!closestSupply) {
+      return <span className="text-gray-500 dark:text-gray-400">-</span>;
+    }
+
+    const oldSupply = closestSupply.value;
+    if (oldSupply <= 0) {
+      return <span className="text-gray-500 dark:text-gray-400">-</span>;
+    }
+
+    // Değişimi hesapla
+    const change = Math.round(currentSupply - oldSupply);
+    
     // Değişimi daha anlamlı göstermek için tam sayıya yuvarla
-    const roundedChange = Math.round(value.change);
+    const roundedChange = change;
     
     const color = roundedChange === 0
       ? "text-gray-500 dark:text-gray-400"
@@ -131,7 +158,7 @@ export default function CryptoTable() {
     }
 
     return (
-      <span className={color} title={value.supply ? `Önceki Arz: ${value.supply.toLocaleString()}` : ""}>
+      <span className={color} title={`Önceki Arz: ${oldSupply.toLocaleString()}`}>
         {prefix}
         {formattedChange}
       </span>
@@ -236,13 +263,13 @@ export default function CryptoTable() {
                         {formatNumber(crypto.price)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.supplyChange1d)}
+                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 1)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.supplyChange1w)}
+                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 7)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.supplyChange1m)}
+                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 30)}
                       </td>
                       <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.volume24h, true)}
