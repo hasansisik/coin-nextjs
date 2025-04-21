@@ -25,7 +25,7 @@ export default function LoginPage() {
       </div>
       
       {/* Bottom left button - hidden on mobile with image overlay */}
-      <div className="hidden md:block absolute bottom-4 left-52 z-20">
+      <div className="hidden md:block absolute bottom-15 left-52 z-20">
         <div className="flex flex-col items-center">
           <div className="mb-4">
             <Link href="https://www.youtube.com/watch?v=plP7_6WQcME&t=3s" target="_blank" rel="noopener noreferrer">
