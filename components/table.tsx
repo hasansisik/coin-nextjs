@@ -46,8 +46,12 @@ export default function CryptoTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCoins, setTotalCoins] = useState(500);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const itemsPerPage = 50; // Her sayfada 50 coin göster
   const totalPages = Math.ceil(totalCoins / itemsPerPage);
+  
+  // Original data and filtered data
+  const [allCryptoData, setAllCryptoData] = useState<CryptoData[]>([]);
 
   useEffect(() => {
     const fetchCoinData = async (page: number) => {
@@ -80,6 +84,7 @@ export default function CryptoTable() {
         }
         
         setCryptoData(coins);
+        setAllCryptoData(coins);
         setTotalCoins(totalCoins);
         setLastUpdated(new Date(lastUpdated));
         setIsRefreshing(false);
@@ -95,6 +100,23 @@ export default function CryptoTable() {
     const interval = setInterval(() => fetchCoinData(currentPage), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [currentPage]);
+
+  // Filter coins based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setCryptoData(allCryptoData);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filteredData = allCryptoData.filter(
+      (crypto) => 
+        crypto.name.toLowerCase().includes(query) || 
+        crypto.symbol.toLowerCase().includes(query)
+    );
+    
+    setCryptoData(filteredData);
+  }, [searchQuery, allCryptoData]);
 
   const formatNumber = (num: number): string => {
     return num
@@ -249,6 +271,40 @@ export default function CryptoTable() {
     );
   };
 
+  // Helper function to get supply data with case-insensitive symbol matching
+  const getSupplyData = (symbol: string) => {
+    // First try direct lookup
+    if (supplyHistoryData[symbol]) {
+      return supplyHistoryData[symbol];
+    }
+    
+    // Try case-insensitive lookup
+    const upperSymbol = symbol.toUpperCase();
+    for (const key in supplyHistoryData) {
+      if (key.toUpperCase() === upperSymbol) {
+        return supplyHistoryData[key];
+      }
+    }
+    
+    return null;
+  };
+
+  // Fixed version that updates the table cell rendering to handle null safely
+  const renderSupplyChange = (crypto: CryptoData, timePeriod: 'day' | 'week' | 'month'): React.ReactElement => {
+    const supplyData = getSupplyData(crypto.symbol);
+    if (supplyData) {
+      return formatSupplyDifference(
+        crypto.circulatingSupply, 
+        supplyData[`${timePeriod}Supply`], 
+        supplyData[`${timePeriod}Date`]
+      );
+    }
+    
+    // Fallback to using supplies from the coin data
+    const days = timePeriod === 'day' ? 1 : timePeriod === 'week' ? 7 : 30;
+    return formatPercentage(crypto.circulatingSupply, crypto.supplies, days);
+  };
+
   const handlePageChange = (page: number) => {
     setCryptoData([]);
     setIsRefreshing(true);
@@ -280,26 +336,48 @@ export default function CryptoTable() {
           </div>
         )}
         
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center px-4 py-3 bg-gray-50 dark:bg-gray-800/50 gap-2">
+          <div className="flex items-center space-x-2">
+            <input
+              type="text"
+              placeholder="Coin ara (BTC, Bitcoin...)"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="px-3 py-1 bg-white rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] md:min-w-[220px] w-full md:w-auto"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Temizle
+              </button>
+            )}
+          </div>
+          
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {searchQuery ? 
+              `"${searchQuery}" için arama sonuçları (${cryptoData.length} coin bulundu)` :
+              `Sayfa ${currentPage} / ${totalPages} - ${(currentPage - 1) * itemsPerPage + 1} ile ${Math.min(currentPage * itemsPerPage, totalCoins)} arası coinler gösteriliyor`
+            }
+            {lastUpdated && (
+              <span className="ml-4 block md:inline">
+                Son Güncelleme: {formatUpdateTime(lastUpdated)}
+              </span>
+            )}
+            {!searchQuery && (
+              <button 
+                onClick={() => handlePageChange(1)}
+                className="ml-0 md:ml-4 mt-1 md:mt-0 text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors block md:inline"
+              >
+                Sayfa Başı
+              </button>
+            )}
+          </div>
+        </div>
+        
         <div className={`w-full overflow-x-auto custom-scrollbar md:overflow-visible ${isRefreshing ? 'opacity-50' : 'opacity-100'}`}>
           <div className="relative overflow-y-auto max-h-[600px] custom-scrollbar md:overflow-visible md:max-h-none">
-            <div className="flex justify-between items-center px-4 py-2 bg-gray-50 dark:bg-gray-800/50">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                Sayfa {currentPage} / {totalPages} - {(currentPage - 1) * itemsPerPage + 1} ile {Math.min(currentPage * itemsPerPage, totalCoins)} arası coinler gösteriliyor
-                {lastUpdated && (
-                  <span className="ml-4">
-                    Son Güncelleme: {formatUpdateTime(lastUpdated)}
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => handlePageChange(1)}
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors"
-                >
-                  Sayfa Başı
-                </button>
-              </div>
-            </div>
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10 md:static">
                 <tr className="text-left font-medium text-gray-800 dark:text-gray-200 border-b dark:border-gray-700">
@@ -347,19 +425,13 @@ export default function CryptoTable() {
                         {formatNumber(crypto.price)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {supplyHistoryData[crypto.symbol] 
-                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].daySupply, supplyHistoryData[crypto.symbol].dayDate)
-                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 1)}
+                        {renderSupplyChange(crypto, 'day')}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {supplyHistoryData[crypto.symbol] 
-                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].weekSupply, supplyHistoryData[crypto.symbol].weekDate)
-                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 7)}
+                        {renderSupplyChange(crypto, 'week')}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {supplyHistoryData[crypto.symbol] 
-                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].monthSupply, supplyHistoryData[crypto.symbol].monthDate)
-                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 30)}
+                        {renderSupplyChange(crypto, 'month')}
                       </td>
                       <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.volume24h, true)}
@@ -527,21 +599,64 @@ export default function CryptoTable() {
         }
       `}</style>
 
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious
-              onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-              className={
-                currentPage === 1
-                  ? "pointer-events-none opacity-50"
-                  : "cursor-pointer"
-              }
-            />
-          </PaginationItem>
+      {!searchQuery && (
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                className={
+                  currentPage === 1
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
+            </PaginationItem>
 
-          {[1, 2, 3].map((pageNum) => (
-            pageNum <= totalPages && (
+            {[1, 2, 3].map((pageNum) => (
+              pageNum <= totalPages && (
+                <PaginationItem key={pageNum}>
+                  <PaginationLink
+                    onClick={() => handlePageChange(pageNum)}
+                    isActive={currentPage === pageNum}
+                  >
+                    {pageNum}
+                  </PaginationLink>
+                </PaginationItem>
+              )
+            ))}
+
+            {currentPage > 6 && (
+              <PaginationItem>
+                <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
+              </PaginationItem>
+            )}
+
+            {totalPages > 3 && 
+              Array.from({ length: 3 }, (_, i) => currentPage - 1 + i).map(pageNum => {
+                if (pageNum > 3 && pageNum <= totalPages - 3) {
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        onClick={() => handlePageChange(pageNum)}
+                        isActive={currentPage === pageNum}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
+                return null;
+              })
+            }
+
+            {currentPage < totalPages - 5 && (
+              <PaginationItem>
+                <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
+              </PaginationItem>
+            )}
+
+            {totalPages > 3 && [totalPages - 2, totalPages - 1, totalPages].map((pageNum) => (
               <PaginationItem key={pageNum}>
                 <PaginationLink
                   onClick={() => handlePageChange(pageNum)}
@@ -550,62 +665,21 @@ export default function CryptoTable() {
                   {pageNum}
                 </PaginationLink>
               </PaginationItem>
-            )
-          ))}
+            ))}
 
-          {currentPage > 6 && (
             <PaginationItem>
-              <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
+              <PaginationNext
+                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                className={
+                  currentPage === totalPages
+                    ? "pointer-events-none opacity-50"
+                    : "cursor-pointer"
+                }
+              />
             </PaginationItem>
-          )}
-
-          {totalPages > 3 && 
-            Array.from({ length: 3 }, (_, i) => currentPage - 1 + i).map(pageNum => {
-              if (pageNum > 3 && pageNum <= totalPages - 3) {
-                return (
-                  <PaginationItem key={pageNum}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(pageNum)}
-                      isActive={currentPage === pageNum}
-                    >
-                      {pageNum}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              }
-              return null;
-            })
-          }
-
-          {currentPage < totalPages - 5 && (
-            <PaginationItem>
-              <span className="flex h-9 w-9 items-center justify-center text-sm">...</span>
-            </PaginationItem>
-          )}
-
-          {totalPages > 3 && [totalPages - 2, totalPages - 1, totalPages].map((pageNum) => (
-            <PaginationItem key={pageNum}>
-              <PaginationLink
-                onClick={() => handlePageChange(pageNum)}
-                isActive={currentPage === pageNum}
-              >
-                {pageNum}
-              </PaginationLink>
-            </PaginationItem>
-          ))}
-
-          <PaginationItem>
-            <PaginationNext
-              onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-              className={
-                currentPage === totalPages
-                  ? "pointer-events-none opacity-50"
-                  : "cursor-pointer"
-              }
-            />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 }

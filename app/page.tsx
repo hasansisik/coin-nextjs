@@ -18,16 +18,16 @@ export default function LoginPage() {
             <path d="M12 5v14M5 12l7 7 7-7"/>
           </svg>
         </div>
-        <Link href="https://www.instagram.com/kriptotek/" target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 bg-blue-500 text-white font-medium text-sm rounded-full hover:opacity-90 transition-opacity flex flex-col items-center">
+        <Link href="https://tinyurl.com/54bf5wes" target="_blank" rel="noopener noreferrer" className="px-4 py-2.5 bg-blue-500 text-white font-medium text-sm rounded-full hover:opacity-90 transition-opacity flex flex-col items-center">
           <span>Tıkla ve Üye Ol</span>
           <span>Komisyon İndiriminden Faydalan</span>
         </Link>
       </div>
       
       {/* Bottom left button - hidden on mobile with image overlay */}
-      <div className="hidden md:block absolute bottom-15 left-52 z-20">
+      <div className="hidden md:block absolute bottom-18 left-52 z-20">
         <div className="flex flex-col items-center">
-          <div className="mb-4">
+          <div className="mb-8">
             <Link href="https://www.youtube.com/watch?v=plP7_6WQcME&t=3s" target="_blank" rel="noopener noreferrer">
               <Image 
                 src="/leftdown.png" 
