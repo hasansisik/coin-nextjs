@@ -23,11 +23,25 @@ interface CryptoData {
   circulatingSupply: number;
   totalSupply: number;
   maxSupply: number | null;
-  supplies: { value: number; timestamp: Date }[];
+  supplies: { value: number, timestamp: Date }[];
+}
+
+// SupplyHistory verileri için interface
+interface SupplyHistoryData {
+  [symbol: string]: {
+    daySupply: number | null;
+    dayDate: string | null;
+    weekSupply: number | null;
+    weekDate: string | null;
+    monthSupply: number | null;
+    monthDate: string | null;
+    latestSupply: number | null;
+  }
 }
 
 export default function CryptoTable() {
   const [cryptoData, setCryptoData] = useState<CryptoData[]>([]);
+  const [supplyHistoryData, setSupplyHistoryData] = useState<SupplyHistoryData>({});
   const [isRefreshing, setIsRefreshing] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCoins, setTotalCoins] = useState(500);
@@ -57,6 +71,13 @@ export default function CryptoTable() {
         }
         
         const { coins, totalCoins, lastUpdated } = response.data.data;
+        
+        // SupplyHistory verileri için istek gönder
+        const supplyDetailsResponse = await axios.get(`${server}/supply-details/all`);
+        
+        if (supplyDetailsResponse.data.success) {
+          setSupplyHistoryData(supplyDetailsResponse.data.data);
+        }
         
         setCryptoData(coins);
         setTotalCoins(totalCoins);
@@ -109,18 +130,32 @@ export default function CryptoTable() {
     const targetDate = new Date();
     targetDate.setDate(today.getDate() - days);
 
-    // En yakın tarihli kaydı bul
+    // Tarihe göre sırala (en yeni en başta)
+    const sortedSupplies = [...supplies].sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    // Hedef tarihten ÖNCE olan en yakın kaydı bul
     let closestSupply = null;
     let minTimeDiff = Infinity;
 
-    for (const supply of supplies) {
+    for (const supply of sortedSupplies) {
       const supplyDate = new Date(supply.timestamp);
-      const timeDiff = Math.abs(supplyDate.getTime() - targetDate.getTime());
       
-      if (timeDiff < minTimeDiff) {
-        minTimeDiff = timeDiff;
-        closestSupply = supply;
+      // Sadece hedef tarihten daha eski kayıtları kontrol et
+      if (supplyDate <= targetDate) {
+        const timeDiff = Math.abs(supplyDate.getTime() - targetDate.getTime());
+        
+        if (timeDiff < minTimeDiff) {
+          minTimeDiff = timeDiff;
+          closestSupply = supply;
+        }
       }
+    }
+
+    // Hedef tarihten önce kayıt yoksa, en eski kaydı al
+    if (!closestSupply && sortedSupplies.length > 0) {
+      closestSupply = sortedSupplies[sortedSupplies.length - 1];
     }
 
     if (!closestSupply) {
@@ -132,35 +167,84 @@ export default function CryptoTable() {
       return <span className="text-gray-500 dark:text-gray-400">-</span>;
     }
 
-    // Değişimi hesapla
-    const change = Math.round(currentSupply - oldSupply);
+    // Değişimi hesapla - Mevcut circulatingSupply ile supply arasındaki fark
+    const change = currentSupply - oldSupply;
     
-    // Değişimi daha anlamlı göstermek için tam sayıya yuvarla
-    const roundedChange = change;
-    
-    const color = roundedChange === 0
+    // Değişimi daha anlamlı göstermek için renklendir
+    const color = change === 0
       ? "text-gray-500 dark:text-gray-400"
-      : roundedChange < 0
+      : change < 0
       ? "text-red-500 dark:text-red-400"
       : "text-green-500 dark:text-green-400";
-    const prefix = roundedChange === 0 ? "" : roundedChange < 0 ? "▼ " : "▲ ";
     
-    // Format number with suffix 'm' for million, 'b' for billion
-    const absChange = Math.abs(roundedChange);
+    // Ok işareti ekle
+    const prefix = change === 0 ? "" : change < 0 ? "▼ " : "▲ ";
+    
+    // Değişim miktarını formatla
+    const absChange = Math.abs(change);
     let formattedChange: string;
     
     if (absChange >= 1_000_000_000) {
       formattedChange = (absChange / 1_000_000_000).toFixed(2) + 'b';
     } else if (absChange >= 1_000_000) {
       formattedChange = (absChange / 1_000_000).toFixed(2) + 'm';
+    } else if (absChange >= 1_000) {
+      formattedChange = (absChange / 1_000).toFixed(2) + 'k';
     } else {
       formattedChange = absChange.toLocaleString("en-US");
     }
 
+    // Tooltip bilgisi
+    const supplyDate = new Date(closestSupply.timestamp).toLocaleDateString('tr-TR');
+    const diffInDays = Math.round((today.getTime() - new Date(closestSupply.timestamp).getTime()) / (1000 * 60 * 60 * 24));
+    
     return (
-      <span className={color} title={`Önceki Arz: ${oldSupply.toLocaleString()}`}>
-        {prefix}
-        {formattedChange}
+      <span className={color} title={`Mevcut: ${currentSupply.toLocaleString()}\nÖnceki: ${oldSupply.toLocaleString()} (${diffInDays} gün önce, ${supplyDate})\nFark: ${change.toLocaleString()}`}>
+        {prefix}{formattedChange}
+      </span>
+    );
+  };
+
+  // Supply değişimini göstermek için fonksiyon
+  const formatSupplyDifference = (currentSupply: number, historicalSupply: number | null, date: string | null): React.ReactElement => {
+    if (!historicalSupply) {
+      return <span className="text-gray-500 dark:text-gray-400">-</span>;
+    }
+
+    // Değişimi hesapla
+    const change = currentSupply - historicalSupply;
+    
+    // Değişimi daha anlamlı göstermek için renklendir
+    const color = change === 0
+      ? "text-gray-500 dark:text-gray-400"
+      : change < 0
+      ? "text-red-500 dark:text-red-400"
+      : "text-green-500 dark:text-green-400";
+    
+    // Ok işareti ekle
+    const prefix = change === 0 ? "" : change < 0 ? "▼ " : "▲ ";
+    
+    // Değişim miktarını formatla
+    const absChange = Math.abs(change);
+    let formattedChange: string;
+    
+    if (absChange >= 1_000_000_000) {
+      formattedChange = (absChange / 1_000_000_000).toFixed(2) + 'b';
+    } else if (absChange >= 1_000_000) {
+      formattedChange = (absChange / 1_000_000).toFixed(2) + 'm';
+    } else if (absChange >= 1_000) {
+      formattedChange = (absChange / 1_000).toFixed(2) + 'k';
+    } else {
+      formattedChange = absChange.toLocaleString("en-US");
+    }
+
+    // Tooltip bilgisi
+    const formattedDate = date ? new Date(date).toLocaleDateString('tr-TR') : 'Bilinmiyor';
+    const percentageChange = historicalSupply > 0 ? (change / historicalSupply) * 100 : 0;
+    
+    return (
+      <span className={color} title={`Mevcut: ${currentSupply.toLocaleString()}\nÖnceki: ${historicalSupply.toLocaleString()} (${formattedDate})\nFark: ${change.toLocaleString()} (${percentageChange.toFixed(2)}%)`}>
+        {prefix}{formattedChange}
       </span>
     );
   };
@@ -263,13 +347,19 @@ export default function CryptoTable() {
                         {formatNumber(crypto.price)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 1)}
+                        {supplyHistoryData[crypto.symbol] 
+                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].daySupply, supplyHistoryData[crypto.symbol].dayDate)
+                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 1)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 7)}
+                        {supplyHistoryData[crypto.symbol] 
+                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].weekSupply, supplyHistoryData[crypto.symbol].weekDate)
+                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 7)}
                       </td>
                       <td className="px-4 py-4 font-bold">
-                        {formatPercentage(crypto.circulatingSupply, crypto.supplies, 30)}
+                        {supplyHistoryData[crypto.symbol] 
+                          ? formatSupplyDifference(crypto.circulatingSupply, supplyHistoryData[crypto.symbol].monthSupply, supplyHistoryData[crypto.symbol].monthDate)
+                          : formatPercentage(crypto.circulatingSupply, crypto.supplies, 30)}
                       </td>
                       <td className="px-4 py-4 font-bold dark:text-gray-300">
                         {formatCurrency(crypto.volume24h, true)}
